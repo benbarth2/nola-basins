@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Live Catch Basin Operations Dashboard</title>
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+    <link href="https://api.mapbox.com/mapbox-gl-js/v3.2.0/mapbox-gl.css" rel="stylesheet">
+    <script src="https://api.mapbox.com/mapbox-gl-js/v3.2.0/mapbox-gl.js"></script>
+    <style>
+        body { margin: 0; padding: 0; display: flex; height: 100vh; font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #1a1a1a; color: #fff; }
+        
+        #sidebar { width: 350px; display: flex; flex-direction: column; border-right: 1px solid #333; z-index: 1; box-shadow: 2px 0 5px rgba(0,0,0,0.5); }
+        
+        #search-container { padding: 20px; background-color: #222; border-bottom: 1px solid #333; }
+        #search-container h2 { margin: 0 0 10px 0; font-size: 18px; color: #ff4444; }
+        #searchBox { width: 100%; padding: 10px; border-radius: 5px; border: none; background-color: #333; color: white; font-size: 16px; outline: none; box-sizing: border-box; margin-bottom: 10px; }
+        #searchBox:focus { background-color: #444; }
+        
+        #routeBtn { width: 100%; padding: 12px; background-color: #28a745; color: white; border: none; border-radius: 5px; font-weight: bold; font-size: 14px; cursor: pointer; transition: background 0.2s; }
+        #routeBtn:hover { background-color: #218838; }
+        
+        #list-container { flex: 1; overflow-y: auto; background-color: #1a1a1a; padding: 10px; }
+        
+        .list-item { padding: 15px; border-bottom: 1px solid #333; cursor: pointer; border-radius: 5px; margin-bottom: 5px; transition: background 0.2s; }
+        .list-item:hover { background-color: #333; }
+        .list-item-title { font-weight: bold; margin-bottom: 5px; font-size: 14px; }
+        .list-item-sub { font-size: 12px; color: #aaa; margin-bottom: 5px; }
+        .route-stops { font-size: 11px; color: #888; margin-top: 8px; padding-left: 10px; border-left: 2px solid #555; }
+        
+        #map { flex: 1; position: relative; }
+        .mapboxgl-popup-content { font-family: Arial, sans-serif; padding: 15px; color: #000; border-radius: 8px; }
+    </style>
+</head>
+<body>
+
+<div id="sidebar">
+    <div id="search-container">
+        <h2>Target Locations</h2>
+        <input type="text" id="searchBox" placeholder="Search by street name...">
+        <button id="routeBtn">Generate Top 5 Routes</button>
+    </div>
+    <div id="list-container"></div>
+</div>
+
+<div id="map"></div>
+
+<script>
+    mapboxgl.accessToken = 'pk.eyJ1IjoiYmJhcnRoMSIsImEiOiJjbW1saHk2cWkxeWxwMndvcGR3cmQ4Znk4In0.qKNF4Ef-mCIVsawr9YShUg'; 
+    const map = new mapboxgl.Map({
+        container: 'map', 
+        style: 'mapbox://styles/mapbox/dark-v11', 
+        center: [-90.0715, 29.9511], 
+        zoom: 11.5 
+    });
+
+    let masterBasins = [];
+    let listItemsDOM = [];
+    const listContainer = document.getElementById('list-container');
+
+    function getDistance(lat1, lon1, lat2, lon2) {
+        const R = 6371e3; 
+        const rad = Math.PI / 180;
+        const dLat = (lat2 - lat1) * rad;
+        const dLon = (lon2 - lon1) * rad;
+        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                  Math.cos(lat1 * rad) * Math.cos(lat2 * rad) *
+                  Math.sin(dLon/2) * Math.sin(dLon/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        return R * c; 
+    }
+
+    map.on('load', () => {
+        const baseUrl = "https://data.nola.gov/resource/2jgv-pqrq.json";
+        const query = "?$where=request_reason in('Catch Basin Clogged', 'Catch Basin Not Draining') AND request_status='Pending'&$limit=5000";
+        
+        fetch(encodeURI(baseUrl + query))
+            .then(response => response.json())
+            .then(data => {
+                
+                // THE FIX: Create a dictionary to hold only unique physical locations
+                const uniqueBasinsMap = new Map();
+
+                data.forEach(basin => {
+                    let lat, lng;
+                    if (basin.location && basin.location.latitude) {
+                         lat = parseFloat(basin.location.latitude);
+                         lng = parseFloat(basin.location.longitude);
+                    } else if (basin.latitude && basin.longitude) {
+                         lat = parseFloat(basin.latitude);
+                         lng = parseFloat(basin.longitude);
+                    }
+
+                    if (lat && lng) {
+                        const address = basin.final_address || 'Address Not Provided';
+                        const ticket = basin.service_request || 'N/A';
+                        
+                        // Round coordinates to 4 decimals (~11 meters) to merge duplicate neighborhood calls
+                        const coordKey = `${lat.toFixed(4)},${lng.toFixed(4)}`;
+
+                        if (uniqueBasinsMap.has(coordKey)) {
+                            // It's a duplicate! Just add the ticket number to the existing pile
+                            uniqueBasinsMap.get(coordKey).tickets.push(ticket);
+                        } else {
+                            // It's a new unique location
+                            uniqueBasinsMap.set(coordKey, {
+                                lat: lat,
+                                lng: lng,
+                                address: address,
+                                tickets: [ticket]
+                            });
+                        }
+                    }
+                });
+
+                let idCounter = 0; 
+                
+                // Now loop through our cleaned, deduplicated list to draw the map
+                uniqueBasinsMap.forEach((basinData) => {
+                    const reportCount = basinData.tickets.length;
+                    
+                    // Highlight addresses with multiple complaints
+                    const displayAddress = reportCount > 1 
+                        ? `${basinData.address} <span style="color:#ffc107">(${reportCount} Reports)</span>` 
+                        : basinData.address;
+
+                    // Clean text for the routing algorithm to use later
+                    const cleanTextAddress = reportCount > 1 
+                        ? `${basinData.address} (${reportCount} Reports)` 
+                        : basinData.address;
+
+                        const popupText = `<strong>${basinData.address}</strong><br>Coords: ${basinData.lat.toFixed(4)}, ${basinData.lng.toFixed(4)}<br>Tickets (${reportCount}): ${basinData.tickets.join(', ')}<br>Status: Pending`;
+                    const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(popupText);
+                    const marker = new mapboxgl.Marker({ color: '#ff4444' })
+                        .setLngLat([basinData.lng, basinData.lat])
+                        .setPopup(popup)
+                        .addTo(map);
+
+                    const listItem = document.createElement('div');
+                    listItem.className = 'list-item';
+                    listItem.innerHTML = `<div class="list-item-title">${displayAddress}</div>`;
+                    
+                    listItem.addEventListener('click', () => {
+                        map.flyTo({ center: [basinData.lng, basinData.lat], zoom: 16 });
+                        popup.addTo(map);
+                    });
+                    listContainer.appendChild(listItem);
+
+                    listItemsDOM.push({ element: listItem, addressText: basinData.address.toLowerCase() });
+                    masterBasins.push({
+                        id: idCounter++,
+                        lat: basinData.lat,
+                        lng: basinData.lng,
+                        address: cleanTextAddress,
+                        marker: marker,
+                        element: listItem
+                    });
+                });
+                
+                console.log(`Ready! Consolidated down to ${masterBasins.length} UNIQUE physical basins.`);
+            })
+            .catch(err => console.error("Error loading data:", err));
+    });
+
+    document.getElementById('searchBox').addEventListener('input', (e) => {
+        const term = e.target.value.toLowerCase();
+        listItemsDOM.forEach(item => {
+            item.element.style.display = item.addressText.includes(term) ? 'block' : 'none';
+        });
+    });
+
+    document.getElementById('routeBtn').addEventListener('click', () => {
+        if (masterBasins.length === 0) {
+            alert("Still loading map data. Give it a few seconds!");
+            return;
+        }
+
+        const btn = document.getElementById('routeBtn');
+        btn.innerText = "Calculating Routes...";
+        btn.style.backgroundColor = "#ffc107"; 
+
+        setTimeout(() => {
+            const searchRadiusDeg = 0.005; 
+
+            masterBasins.forEach(b1 => {
+                let nearby = [];
+                for (let i = 0; i < masterBasins.length; i++) {
+                    let b2 = masterBasins[i];
+                    if (Math.abs(b1.lat - b2.lat) < searchRadiusDeg && Math.abs(b1.lng - b2.lng) < searchRadiusDeg) {
+                        nearby.push({
+                            id: b2.id,
+                            dist: getDistance(b1.lat, b1.lng, b2.lat, b2.lng),
+                            data: b2
+                        });
+                    }
+                }
+                nearby.sort((a, b) => a.dist - b.dist);
+                
+                if (nearby.length >= 5) {
+                    b1.cluster = nearby.slice(0, 5);
+                    b1.radius = b1.cluster[4].dist; 
+                } else {
+                    b1.radius = 999999; 
+                }
+            });
+
+            let sortedByDensity = [...masterBasins]
+                .filter(b => b.radius !== 999999) 
+                .sort((a, b) => a.radius - b.radius);
+
+            let finalRoutes = [];
+            let usedBasinIds = new Set();
+
+            for (let target of sortedByDensity) {
+                let hasOverlap = target.cluster.some(neighbor => usedBasinIds.has(neighbor.id));
+                if (!hasOverlap) {
+                    finalRoutes.push(target);
+                    target.cluster.forEach(n => usedBasinIds.add(n.id));
+                }
+                if (finalRoutes.length >= 5) break; 
+            }
+
+            listContainer.innerHTML = ''; 
+            const routeColors = ['#00e5ff', '#39ff14', '#fdf500', '#ff00ff', '#ff8800'];
+
+            masterBasins.forEach(b => {
+                if(b.marker && b.marker.getElement()) {
+                    b.marker.getElement().style.opacity = '0.1';
+                }
+            });
+
+            finalRoutes.forEach((route, index) => {
+                let color = routeColors[index];
+                let stopsHTML = "";
+                
+                route.cluster.forEach(stop => {
+                    const el = stop.data.marker.getElement();
+                    el.style.opacity = '1';
+                    
+                    const coloredPaths = el.querySelectorAll('[fill]');
+                    coloredPaths.forEach(path => {
+                        if(path.getAttribute('fill') !== 'none') {
+                            path.setAttribute('fill', color);
+                        }
+                    });
+
+                    stopsHTML += `<div>• ${stop.data.address}<br>&nbsp;&nbsp;<span style="color:#888; font-size:10px;">${stop.data.lat.toFixed(4)}, ${stop.data.lng.toFixed(4)}</span></div>`;
+                });
+
+                const routeElement = document.createElement('div');
+                routeElement.className = 'list-item';
+                routeElement.style.borderLeft = `5px solid ${color}`;
+                routeElement.innerHTML = `
+                    <div class="list-item-title">Route ${index + 1}: ${route.address}</div>
+                    <div class="list-item-sub">5 Unique Basins inside ${Math.round(route.radius)} meters</div>
+                    <div class="route-stops">${stopsHTML}</div>
+                `;
+                
+                routeElement.addEventListener('click', () => {
+                    map.flyTo({ center: [route.lng, route.lat], zoom: 16 });
+                });
+
+                listContainer.appendChild(routeElement);
+            });
+
+            btn.innerText = "Routes Generated!";
+            btn.style.backgroundColor = "#28a745";
+            
+        }, 50); 
+    });
+</script>
+
+</body>
+</html>
