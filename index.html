@@ -64,7 +64,6 @@
         return R * c; 
     }
 
-    // Ray-casting algorithm to check if a coordinate falls inside a polygon
     function isPointInPolygon(point, vs) {
         let x = point[0], y = point[1];
         let inside = false;
@@ -78,59 +77,52 @@
         return inside;
     }
 
-    // Approximate bounding coordinates for Audubon Riverside [Longitude, Latitude]
+    // UPDATED: Advanced 7-point polygon to capture the true boundaries
     const audubonRiversidePoly = [
-        [-90.1235, 29.9180], // SW: Exposition Blvd & Mississippi River
-        [-90.1215, 29.9250], // NW: Exposition Blvd & Camp St
-        [-90.1080, 29.9220], // NE: Camp St & Valmont St
-        [-90.1105, 29.9150]  // SE: Valmont St & Mississippi River
+        [-90.1285, 29.9155], // SW: Exposition Blvd at the river (pushed further West/South)
+        [-90.1235, 29.9255], // NW: Just North of Camp St & Exposition Blvd (includes both sides)
+        [-90.1070, 29.9185], // NE: Just North of Camp St & Valmont St
+        [-90.1025, 29.9110], // SE: Valmont St at the river (pushed further South)
+        [-90.1120, 29.9090], // River Curve Point 1
+        [-90.1215, 29.9115], // River Curve Point 2
+        [-90.1285, 29.9155]  // Closes the polygon back at the SW point
     ];
 
     map.on('load', () => {
-        // --- NEW: Add the neighborhood boundary source and layers ---
+        // Add the updated neighborhood boundary source
         map.addSource('audubon-boundary', {
             'type': 'geojson',
             'data': {
                 'type': 'Feature',
                 'geometry': {
                     'type': 'Polygon',
-                    // Note: GeoJSON requires the first and last point to be identical to close the loop!
-                    'coordinates': [[
-                        [-90.1235, 29.9180], 
-                        [-90.1215, 29.9250], 
-                        [-90.1080, 29.9220], 
-                        [-90.1105, 29.9150],
-                        [-90.1235, 29.9180] 
-                    ]]
+                    'coordinates': [audubonRiversidePoly] // Maps exactly to our array above
                 }
             }
         });
 
-        // Add a subtle fill color
         map.addLayer({
             'id': 'audubon-fill',
             'type': 'fill',
             'source': 'audubon-boundary',
-            'layout': { 'visibility': 'none' }, // Hidden by default
+            'layout': { 'visibility': 'none' }, 
             'paint': {
                 'fill-color': '#17a2b8',
                 'fill-opacity': 0.15
             }
         });
 
-        // Add a dashed border line
         map.addLayer({
             'id': 'audubon-line',
             'type': 'line',
             'source': 'audubon-boundary',
-            'layout': { 'visibility': 'none' }, // Hidden by default
+            'layout': { 'visibility': 'none' }, 
             'paint': {
                 'line-color': '#17a2b8',
                 'line-width': 3,
-                'line-dasharray': [2, 2] // Creates a nice dashed effect
+                'line-dasharray': [2, 2] 
             }
         });
-        // -------------------------------------------------------------
 
         const baseUrl = "https://data.nola.gov/resource/2jgv-pqrq.json";
         const query = "?$where=request_reason in('Catch Basin Clogged', 'Catch Basin Not Draining') AND request_status='Pending'&$limit=5000";
@@ -329,7 +321,6 @@
             e.target.innerText = "Show Entire City";
             e.target.style.backgroundColor = "#6c757d";
             
-            // Turn ON the border
             map.setLayoutProperty('audubon-fill', 'visibility', 'visible');
             map.setLayoutProperty('audubon-line', 'visibility', 'visible');
             
@@ -344,13 +335,13 @@
                 }
             });
             
-            map.flyTo({ center: [-90.1150, 29.9200], zoom: 14.5 });
+            // Re-centered slightly further West/South to match the new shape
+            map.flyTo({ center: [-90.1160, 29.9170], zoom: 14.2 });
             
         } else {
             e.target.innerText = "Focus on Audubon Riverside";
             e.target.style.backgroundColor = "#17a2b8";
             
-            // Turn OFF the border
             map.setLayoutProperty('audubon-fill', 'visibility', 'none');
             map.setLayoutProperty('audubon-line', 'visibility', 'none');
             
