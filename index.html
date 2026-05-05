@@ -6,6 +6,10 @@
     <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
     <link href="https://api.mapbox.com/mapbox-gl-js/v3.2.0/mapbox-gl.css" rel="stylesheet">
     <script src="https://api.mapbox.com/mapbox-gl-js/v3.2.0/mapbox-gl.js"></script>
+    
+    <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.4.3/mapbox-gl-draw.js"></script>
+    <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.4.3/mapbox-gl-draw.css" type="text/css" />
+    
     <style>
         body { margin: 0; padding: 0; display: flex; height: 100vh; font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #1a1a1a; color: #fff; }
         #sidebar { width: 350px; display: flex; flex-direction: column; border-right: 1px solid #333; z-index: 1; box-shadow: 2px 0 5px rgba(0,0,0,0.5); }
@@ -32,7 +36,7 @@
         <h2>Target Locations</h2>
         <input type="text" id="searchBox" placeholder="Search by street name...">
         <button id="routeBtn">Generate Top 5 Routes</button>
-        <button id="filterBtn" style="width: 100%; padding: 12px; background-color: #17a2b8; color: white; border: none; border-radius: 5px; font-weight: bold; font-size: 14px; cursor: pointer; transition: background 0.2s; margin-top: 10px;">Focus on Audubon Riverside</button>
+        <button id="filterBtn" style="width: 100%; padding: 12px; background-color: #17a2b8; color: white; border: none; border-radius: 5px; font-weight: bold; font-size: 14px; cursor: pointer; transition: background 0.2s; margin-top: 10px;">Filter by Custom Shape</button>
     </div>
     <div id="list-container"></div>
 </div>
@@ -51,6 +55,19 @@
     let masterBasins = [];
     let listItemsDOM = [];
     const listContainer = document.getElementById('list-container');
+
+    // Initialize the Mapbox Draw tool
+    const draw = new MapboxDraw({
+        displayControlsDefault: false,
+        controls: {
+            polygon: true,
+            trash: true
+        },
+        defaultMode: 'simple_select'
+    });
+    
+    // Add the draw tool to the map
+    map.addControl(draw, 'top-right');
 
     function getDistance(lat1, lon1, lat2, lon2) {
         const R = 6371e3; 
@@ -77,50 +94,23 @@
         return inside;
     }
 
-    // UPDATED: Advanced 7-point polygon to capture the true boundaries
-    const audubonRiversidePoly = [
-        [-90.1285, 29.9155], // SW: Exposition Blvd at the river (pushed further West/South)
-        [-90.1235, 29.9255], // NW: Just North of Camp St & Exposition Blvd (includes both sides)
-        [-90.1070, 29.9185], // NE: Just North of Camp St & Valmont St
-        [-90.1025, 29.9110], // SE: Valmont St at the river (pushed further South)
-        [-90.1120, 29.9090], // River Curve Point 1
-        [-90.1215, 29.9115], // River Curve Point 2
-        [-90.1285, 29.9155]  // Closes the polygon back at the SW point
-    ];
-
     map.on('load', () => {
-        // Add the updated neighborhood boundary source
-        map.addSource('audubon-boundary', {
-            'type': 'geojson',
-            'data': {
-                'type': 'Feature',
-                'geometry': {
-                    'type': 'Polygon',
-                    'coordinates': [audubonRiversidePoly] // Maps exactly to our array above
-                }
-            }
-        });
-
-        map.addLayer({
-            'id': 'audubon-fill',
-            'type': 'fill',
-            'source': 'audubon-boundary',
-            'layout': { 'visibility': 'none' }, 
-            'paint': {
-                'fill-color': '#17a2b8',
-                'fill-opacity': 0.15
-            }
-        });
-
-        map.addLayer({
-            'id': 'audubon-line',
-            'type': 'line',
-            'source': 'audubon-boundary',
-            'layout': { 'visibility': 'none' }, 
-            'paint': {
-                'line-color': '#17a2b8',
-                'line-width': 3,
-                'line-dasharray': [2, 2] 
+        // Pre-load our 7-point starter shape into the drawing tool so it's ready to be edited
+        draw.add({
+            'id': 'audubon-boundary',
+            'type': 'Feature',
+            'properties': {},
+            'geometry': {
+                'type': 'Polygon',
+                'coordinates': [[
+                    [-90.1285, 29.9155], 
+                    [-90.1235, 29.9255], 
+                    [-90.1070, 29.9185], 
+                    [-90.1025, 29.9110], 
+                    [-90.1120, 29.9090], 
+                    [-90.1215, 29.9115], 
+                    [-90.1285, 29.9155]  
+                ]]
             }
         });
 
@@ -318,14 +308,23 @@
         isFiltered = !isFiltered;
         
         if (isFiltered) {
+            // Get the current shape drawn on the map
+            const drawnData = draw.getAll();
+            
+            if (drawnData.features.length === 0) {
+                alert("Please draw a shape on the map first!");
+                isFiltered = false;
+                return;
+            }
+            
+            // Extract the coordinates of the first polygon drawn
+            const customPoly = drawnData.features[0].geometry.coordinates[0];
+
             e.target.innerText = "Show Entire City";
             e.target.style.backgroundColor = "#6c757d";
             
-            map.setLayoutProperty('audubon-fill', 'visibility', 'visible');
-            map.setLayoutProperty('audubon-line', 'visibility', 'visible');
-            
             masterBasins.forEach(b => {
-                const inside = isPointInPolygon([b.lng, b.lat], audubonRiversidePoly);
+                const inside = isPointInPolygon([b.lng, b.lat], customPoly);
                 if (inside) {
                     b.marker.getElement().style.display = 'block';
                     b.element.style.display = 'block';
@@ -335,15 +334,12 @@
                 }
             });
             
-            // Re-centered slightly further West/South to match the new shape
-            map.flyTo({ center: [-90.1160, 29.9170], zoom: 14.2 });
+            // Fly to the center of the drawn shape (roughly)
+            map.flyTo({ center: customPoly[0], zoom: 14.2 });
             
         } else {
-            e.target.innerText = "Focus on Audubon Riverside";
+            e.target.innerText = "Filter by Custom Shape";
             e.target.style.backgroundColor = "#17a2b8";
-            
-            map.setLayoutProperty('audubon-fill', 'visibility', 'none');
-            map.setLayoutProperty('audubon-line', 'visibility', 'none');
             
             masterBasins.forEach(b => {
                 b.marker.getElement().style.display = 'block';
