@@ -18,6 +18,13 @@
         
         #routeBtn { width: 100%; padding: 12px; background-color: #28a745; color: white; border: none; border-radius: 5px; font-weight: bold; font-size: 14px; cursor: pointer; transition: background 0.2s; }
         #routeBtn:hover { background-color: #218838; }
+
+        <div id="search-container">
+    <h2>Target Locations</h2>
+    <input type="text" id="searchBox" placeholder="Search by street name...">
+    <button id="routeBtn">Generate Top 5 Routes</button>
+    <button id="filterBtn" style="width: 100%; padding: 12px; background-color: #17a2b8; color: white; border: none; border-radius: 5px; font-weight: bold; font-size: 14px; cursor: pointer; transition: background 0.2s; margin-top: 10px;">Focus on Audubon Riverside</button>
+</div>
         
         #list-container { flex: 1; overflow-y: auto; background-color: #1a1a1a; padding: 10px; }
         
@@ -68,6 +75,28 @@
         const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
         return R * c; 
     }
+
+    // Ray-casting algorithm to check if a coordinate falls inside a polygon
+function isPointInPolygon(point, vs) {
+    let x = point[0], y = point[1];
+    let inside = false;
+    for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
+        let xi = vs[i][0], yi = vs[i][1];
+        let xj = vs[j][0], yj = vs[j][1];
+        let intersect = ((yi > y) != (yj > y))
+            && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+        if (intersect) inside = !inside;
+    }
+    return inside;
+}
+
+// Approximate bounding coordinates for Audubon Riverside [Longitude, Latitude]
+const audubonRiversidePoly = [
+    [-90.1235, 29.9180], // SW: Exposition Blvd & Mississippi River
+    [-90.1215, 29.9250], // NW: Exposition Blvd & Camp St
+    [-90.1080, 29.9220], // NE: Camp St & Valmont St
+    [-90.1105, 29.9150]  // SE: Valmont St & Mississippi River
+];
 
     map.on('load', () => {
         const baseUrl = "https://data.nola.gov/resource/2jgv-pqrq.json";
@@ -267,6 +296,52 @@
             
         }, 50); 
     });
+
+    let isFiltered = false;
+
+document.getElementById('filterBtn').addEventListener('click', (e) => {
+    isFiltered = !isFiltered;
+    
+    if (isFiltered) {
+        e.target.innerText = "Show Entire City";
+        e.target.style.backgroundColor = "#6c757d";
+        
+        let visibleCount = 0;
+        
+        masterBasins.forEach(b => {
+            // Check if the basin's coordinates are inside our polygon
+            const inside = isPointInPolygon([b.lng, b.lat], audubonRiversidePoly);
+            if (inside) {
+                b.marker.getElement().style.display = 'block';
+                b.element.style.display = 'block';
+                visibleCount++;
+            } else {
+                b.marker.getElement().style.display = 'none';
+                b.element.style.display = 'none';
+            }
+        });
+        
+        // Animate the map down to the neighborhood
+        map.flyTo({ center: [-90.1150, 29.9200], zoom: 14.5 });
+        
+    } else {
+        // Reset the UI
+        e.target.innerText = "Focus on Audubon Riverside";
+        e.target.style.backgroundColor = "#17a2b8";
+        
+        // Restore all markers and list items
+        masterBasins.forEach(b => {
+            b.marker.getElement().style.display = 'block';
+            
+            // Only show in the sidebar if it matches whatever is currently in the search box
+            const term = document.getElementById('searchBox').value.toLowerCase();
+            b.element.style.display = b.address.toLowerCase().includes(term) ? 'block' : 'none';
+        });
+        
+        // Fly back to the city-wide view
+        map.flyTo({ center: [-90.0715, 29.9511], zoom: 11.5 });
+    }
+});
 </script>
 
 </body>
