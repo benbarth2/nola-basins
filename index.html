@@ -87,6 +87,51 @@
     ];
 
     map.on('load', () => {
+        // --- NEW: Add the neighborhood boundary source and layers ---
+        map.addSource('audubon-boundary', {
+            'type': 'geojson',
+            'data': {
+                'type': 'Feature',
+                'geometry': {
+                    'type': 'Polygon',
+                    // Note: GeoJSON requires the first and last point to be identical to close the loop!
+                    'coordinates': [[
+                        [-90.1235, 29.9180], 
+                        [-90.1215, 29.9250], 
+                        [-90.1080, 29.9220], 
+                        [-90.1105, 29.9150],
+                        [-90.1235, 29.9180] 
+                    ]]
+                }
+            }
+        });
+
+        // Add a subtle fill color
+        map.addLayer({
+            'id': 'audubon-fill',
+            'type': 'fill',
+            'source': 'audubon-boundary',
+            'layout': { 'visibility': 'none' }, // Hidden by default
+            'paint': {
+                'fill-color': '#17a2b8',
+                'fill-opacity': 0.15
+            }
+        });
+
+        // Add a dashed border line
+        map.addLayer({
+            'id': 'audubon-line',
+            'type': 'line',
+            'source': 'audubon-boundary',
+            'layout': { 'visibility': 'none' }, // Hidden by default
+            'paint': {
+                'line-color': '#17a2b8',
+                'line-width': 3,
+                'line-dasharray': [2, 2] // Creates a nice dashed effect
+            }
+        });
+        // -------------------------------------------------------------
+
         const baseUrl = "https://data.nola.gov/resource/2jgv-pqrq.json";
         const query = "?$where=request_reason in('Catch Basin Clogged', 'Catch Basin Not Draining') AND request_status='Pending'&$limit=5000";
         
@@ -275,7 +320,6 @@
         }, 50); 
     });
 
-    // The logic to make the toggle button work
     let isFiltered = false;
 
     document.getElementById('filterBtn').addEventListener('click', (e) => {
@@ -284,6 +328,10 @@
         if (isFiltered) {
             e.target.innerText = "Show Entire City";
             e.target.style.backgroundColor = "#6c757d";
+            
+            // Turn ON the border
+            map.setLayoutProperty('audubon-fill', 'visibility', 'visible');
+            map.setLayoutProperty('audubon-line', 'visibility', 'visible');
             
             masterBasins.forEach(b => {
                 const inside = isPointInPolygon([b.lng, b.lat], audubonRiversidePoly);
@@ -301,6 +349,10 @@
         } else {
             e.target.innerText = "Focus on Audubon Riverside";
             e.target.style.backgroundColor = "#17a2b8";
+            
+            // Turn OFF the border
+            map.setLayoutProperty('audubon-fill', 'visibility', 'none');
+            map.setLayoutProperty('audubon-line', 'visibility', 'none');
             
             masterBasins.forEach(b => {
                 b.marker.getElement().style.display = 'block';
