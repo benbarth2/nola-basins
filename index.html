@@ -8,32 +8,19 @@
     <script src="https://api.mapbox.com/mapbox-gl-js/v3.2.0/mapbox-gl.js"></script>
     <style>
         body { margin: 0; padding: 0; display: flex; height: 100vh; font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #1a1a1a; color: #fff; }
-        
         #sidebar { width: 350px; display: flex; flex-direction: column; border-right: 1px solid #333; z-index: 1; box-shadow: 2px 0 5px rgba(0,0,0,0.5); }
-        
         #search-container { padding: 20px; background-color: #222; border-bottom: 1px solid #333; }
         #search-container h2 { margin: 0 0 10px 0; font-size: 18px; color: #ff4444; }
         #searchBox { width: 100%; padding: 10px; border-radius: 5px; border: none; background-color: #333; color: white; font-size: 16px; outline: none; box-sizing: border-box; margin-bottom: 10px; }
         #searchBox:focus { background-color: #444; }
-        
         #routeBtn { width: 100%; padding: 12px; background-color: #28a745; color: white; border: none; border-radius: 5px; font-weight: bold; font-size: 14px; cursor: pointer; transition: background 0.2s; }
         #routeBtn:hover { background-color: #218838; }
-
-        <div id="search-container">
-    <h2>Target Locations</h2>
-    <input type="text" id="searchBox" placeholder="Search by street name...">
-    <button id="routeBtn">Generate Top 5 Routes</button>
-    <button id="filterBtn" style="width: 100%; padding: 12px; background-color: #17a2b8; color: white; border: none; border-radius: 5px; font-weight: bold; font-size: 14px; cursor: pointer; transition: background 0.2s; margin-top: 10px;">Focus on Audubon Riverside</button>
-</div>
-        
         #list-container { flex: 1; overflow-y: auto; background-color: #1a1a1a; padding: 10px; }
-        
         .list-item { padding: 15px; border-bottom: 1px solid #333; cursor: pointer; border-radius: 5px; margin-bottom: 5px; transition: background 0.2s; }
         .list-item:hover { background-color: #333; }
         .list-item-title { font-weight: bold; margin-bottom: 5px; font-size: 14px; }
         .list-item-sub { font-size: 12px; color: #aaa; margin-bottom: 5px; }
         .route-stops { font-size: 11px; color: #888; margin-top: 8px; padding-left: 10px; border-left: 2px solid #555; }
-        
         #map { flex: 1; position: relative; }
         .mapboxgl-popup-content { font-family: Arial, sans-serif; padding: 15px; color: #000; border-radius: 8px; }
     </style>
@@ -45,6 +32,7 @@
         <h2>Target Locations</h2>
         <input type="text" id="searchBox" placeholder="Search by street name...">
         <button id="routeBtn">Generate Top 5 Routes</button>
+        <button id="filterBtn" style="width: 100%; padding: 12px; background-color: #17a2b8; color: white; border: none; border-radius: 5px; font-weight: bold; font-size: 14px; cursor: pointer; transition: background 0.2s; margin-top: 10px;">Focus on Audubon Riverside</button>
     </div>
     <div id="list-container"></div>
 </div>
@@ -77,26 +65,26 @@
     }
 
     // Ray-casting algorithm to check if a coordinate falls inside a polygon
-function isPointInPolygon(point, vs) {
-    let x = point[0], y = point[1];
-    let inside = false;
-    for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
-        let xi = vs[i][0], yi = vs[i][1];
-        let xj = vs[j][0], yj = vs[j][1];
-        let intersect = ((yi > y) != (yj > y))
-            && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
-        if (intersect) inside = !inside;
+    function isPointInPolygon(point, vs) {
+        let x = point[0], y = point[1];
+        let inside = false;
+        for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
+            let xi = vs[i][0], yi = vs[i][1];
+            let xj = vs[j][0], yj = vs[j][1];
+            let intersect = ((yi > y) != (yj > y))
+                && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+            if (intersect) inside = !inside;
+        }
+        return inside;
     }
-    return inside;
-}
 
-// Approximate bounding coordinates for Audubon Riverside [Longitude, Latitude]
-const audubonRiversidePoly = [
-    [-90.1235, 29.9180], // SW: Exposition Blvd & Mississippi River
-    [-90.1215, 29.9250], // NW: Exposition Blvd & Camp St
-    [-90.1080, 29.9220], // NE: Camp St & Valmont St
-    [-90.1105, 29.9150]  // SE: Valmont St & Mississippi River
-];
+    // Approximate bounding coordinates for Audubon Riverside [Longitude, Latitude]
+    const audubonRiversidePoly = [
+        [-90.1235, 29.9180], // SW: Exposition Blvd & Mississippi River
+        [-90.1215, 29.9250], // NW: Exposition Blvd & Camp St
+        [-90.1080, 29.9220], // NE: Camp St & Valmont St
+        [-90.1105, 29.9150]  // SE: Valmont St & Mississippi River
+    ];
 
     map.on('load', () => {
         const baseUrl = "https://data.nola.gov/resource/2jgv-pqrq.json";
@@ -105,8 +93,6 @@ const audubonRiversidePoly = [
         fetch(encodeURI(baseUrl + query))
             .then(response => response.json())
             .then(data => {
-                
-                // THE FIX: Create a dictionary to hold only unique physical locations
                 const uniqueBasinsMap = new Map();
 
                 data.forEach(basin => {
@@ -123,14 +109,11 @@ const audubonRiversidePoly = [
                         const address = basin.final_address || 'Address Not Provided';
                         const ticket = basin.service_request || 'N/A';
                         
-                        // Round coordinates to 4 decimals (~11 meters) to merge duplicate neighborhood calls
                         const coordKey = `${lat.toFixed(4)},${lng.toFixed(4)}`;
 
                         if (uniqueBasinsMap.has(coordKey)) {
-                            // It's a duplicate! Just add the ticket number to the existing pile
                             uniqueBasinsMap.get(coordKey).tickets.push(ticket);
                         } else {
-                            // It's a new unique location
                             uniqueBasinsMap.set(coordKey, {
                                 lat: lat,
                                 lng: lng,
@@ -143,21 +126,18 @@ const audubonRiversidePoly = [
 
                 let idCounter = 0; 
                 
-                // Now loop through our cleaned, deduplicated list to draw the map
                 uniqueBasinsMap.forEach((basinData) => {
                     const reportCount = basinData.tickets.length;
                     
-                    // Highlight addresses with multiple complaints
                     const displayAddress = reportCount > 1 
                         ? `${basinData.address} <span style="color:#ffc107">(${reportCount} Reports)</span>` 
                         : basinData.address;
 
-                    // Clean text for the routing algorithm to use later
                     const cleanTextAddress = reportCount > 1 
                         ? `${basinData.address} (${reportCount} Reports)` 
                         : basinData.address;
 
-                        const popupText = `<strong>${basinData.address}</strong><br>Coords: ${basinData.lat.toFixed(4)}, ${basinData.lng.toFixed(4)}<br>Tickets (${reportCount}): ${basinData.tickets.join(', ')}<br>Status: Pending`;
+                    const popupText = `<strong>${basinData.address}</strong><br>Coords: ${basinData.lat.toFixed(4)}, ${basinData.lng.toFixed(4)}<br>Tickets (${reportCount}): ${basinData.tickets.join(', ')}<br>Status: Pending`;
                     const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(popupText);
                     const marker = new mapboxgl.Marker({ color: '#ff4444' })
                         .setLngLat([basinData.lng, basinData.lat])
@@ -184,8 +164,6 @@ const audubonRiversidePoly = [
                         element: listItem
                     });
                 });
-                
-                console.log(`Ready! Consolidated down to ${masterBasins.length} UNIQUE physical basins.`);
             })
             .catch(err => console.error("Error loading data:", err));
     });
@@ -297,51 +275,42 @@ const audubonRiversidePoly = [
         }, 50); 
     });
 
+    // The logic to make the toggle button work
     let isFiltered = false;
 
-document.getElementById('filterBtn').addEventListener('click', (e) => {
-    isFiltered = !isFiltered;
-    
-    if (isFiltered) {
-        e.target.innerText = "Show Entire City";
-        e.target.style.backgroundColor = "#6c757d";
+    document.getElementById('filterBtn').addEventListener('click', (e) => {
+        isFiltered = !isFiltered;
         
-        let visibleCount = 0;
-        
-        masterBasins.forEach(b => {
-            // Check if the basin's coordinates are inside our polygon
-            const inside = isPointInPolygon([b.lng, b.lat], audubonRiversidePoly);
-            if (inside) {
-                b.marker.getElement().style.display = 'block';
-                b.element.style.display = 'block';
-                visibleCount++;
-            } else {
-                b.marker.getElement().style.display = 'none';
-                b.element.style.display = 'none';
-            }
-        });
-        
-        // Animate the map down to the neighborhood
-        map.flyTo({ center: [-90.1150, 29.9200], zoom: 14.5 });
-        
-    } else {
-        // Reset the UI
-        e.target.innerText = "Focus on Audubon Riverside";
-        e.target.style.backgroundColor = "#17a2b8";
-        
-        // Restore all markers and list items
-        masterBasins.forEach(b => {
-            b.marker.getElement().style.display = 'block';
+        if (isFiltered) {
+            e.target.innerText = "Show Entire City";
+            e.target.style.backgroundColor = "#6c757d";
             
-            // Only show in the sidebar if it matches whatever is currently in the search box
-            const term = document.getElementById('searchBox').value.toLowerCase();
-            b.element.style.display = b.address.toLowerCase().includes(term) ? 'block' : 'none';
-        });
-        
-        // Fly back to the city-wide view
-        map.flyTo({ center: [-90.0715, 29.9511], zoom: 11.5 });
-    }
-});
+            masterBasins.forEach(b => {
+                const inside = isPointInPolygon([b.lng, b.lat], audubonRiversidePoly);
+                if (inside) {
+                    b.marker.getElement().style.display = 'block';
+                    b.element.style.display = 'block';
+                } else {
+                    b.marker.getElement().style.display = 'none';
+                    b.element.style.display = 'none';
+                }
+            });
+            
+            map.flyTo({ center: [-90.1150, 29.9200], zoom: 14.5 });
+            
+        } else {
+            e.target.innerText = "Focus on Audubon Riverside";
+            e.target.style.backgroundColor = "#17a2b8";
+            
+            masterBasins.forEach(b => {
+                b.marker.getElement().style.display = 'block';
+                const term = document.getElementById('searchBox').value.toLowerCase();
+                b.element.style.display = b.address.toLowerCase().includes(term) ? 'block' : 'none';
+            });
+            
+            map.flyTo({ center: [-90.0715, 29.9511], zoom: 11.5 });
+        }
+    });
 </script>
 
 </body>
