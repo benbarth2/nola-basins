@@ -50,6 +50,14 @@ select{width:100%;font:inherit;font-size:.92rem;padding:9px 10px;border:1px soli
 .mapboxgl-popup-content{font-family:"IBM Plex Sans",sans-serif;font-size:.85rem;padding:10px 12px;border-radius:8px}
 .mapboxgl-popup-content b{display:block;font-family:Archivo,sans-serif;font-size:.92rem;margin-bottom:2px}
 .mapboxgl-popup-content .m{color:var(--muted)}
+.mapboxgl-popup{max-width:300px!important}
+.pics{display:flex;gap:6px;margin-top:8px}
+.pics img{width:132px;height:132px;object-fit:cover;border-radius:6px;cursor:zoom-in;background:var(--line);display:block}
+.pics.one img{width:100%;height:170px}
+.item .cam{float:right;color:var(--muted);font-size:.75rem}
+#lb{position:fixed;inset:0;z-index:50;background:rgba(10,12,12,.92);display:none;align-items:center;justify-content:center;padding:20px;cursor:zoom-out}
+#lb.on{display:flex}
+#lb img{max-width:100%;max-height:100%;border-radius:6px}
 footer{padding:10px 20px;border-top:1px solid var(--line);font-size:.78rem;color:var(--muted)}
 footer a{color:var(--accent)}
 @media (max-width:800px){
@@ -83,6 +91,7 @@ footer a{color:var(--accent)}
 <div id="map">
   <div class="legend"><span><i style="background:#1F6F5C"></i>Matched to a city basin</span><span><i style="background:#B9852F"></i>Approximate location</span></div>
 </div>
+<div id="lb" role="dialog" aria-label="Photo"><img alt=""></div>
 <script>
 mapboxgl.accessToken='pk.eyJ1IjoiYmJhcnRoMSIsImEiOiJjbW1saHk2cWkxeWxwMndvcGR3cmQ4Znk4In0.qKNF4Ef-mCIVsawr9YShUg';
 const fmt=d=>new Date(d+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
@@ -93,7 +102,7 @@ const map0=new mapboxgl.Map({container:'map',style:'mapbox://styles/mapbox/light
 map=map0;map.addControl(new mapboxgl.NavigationControl({showCompass:false}),'top-right');
 popup=new mapboxgl.Popup({offset:10,closeButton:false});
 
-fetch('basins.json?v=2026-11-11d').then(r=>r.json()).then(data=>{
+fetch('basins.json?v=2026-11-11e').then(r=>r.json()).then(data=>{
   basins=data.map((b,i)=>({...b,i,key:b.d+'|'+b.n}));
   const events=[...new Map(basins.map(b=>[b.key,{key:b.key,d:b.d,n:b.n}])).values()].sort((a,b)=>b.d.localeCompare(a.d)||a.n.localeCompare(b.n));
   document.getElementById('total').textContent=new Set(basins.map(b=>b.cid||b.a+b.lat)).size;
@@ -120,7 +129,8 @@ fetch('basins.json?v=2026-11-11d').then(r=>r.json()).then(data=>{
 }).catch(()=>{document.getElementById('list').innerHTML='<p class="empty">The basin list couldn’t load. Try refreshing.</p>'});
 
 function show(b,fly){
-  popup.setLngLat([b.lon,b.lat]).setHTML(`<b>${esc(b.a)}</b><span class="m">${esc(b.n)} cleanup · ${fmt(b.d)}${b.p==='city'?'':'<br>Approximate location'}</span>`).addTo(map);
+  const pics=b.ph&&b.ph.length?`<div class="pics${b.ph.length===1?' one':''}">${b.ph.map((f,i)=>`<img src="photos/${f}" alt="${i===0&&b.ph.length>1?'Before':'Catch basin'} at ${esc(b.a)}" loading="lazy" onclick="openLb(this.src)">`).join('')}</div>`:'';
+  popup.setLngLat([b.lon,b.lat]).setHTML(`<b>${esc(b.a)}</b><span class="m">${esc(b.n)} cleanup · ${fmt(b.d)}${b.p==='city'?'':'<br>Approximate location'}</span>${pics}`).addTo(map);
   if(fly)map.flyTo({center:[b.lon,b.lat],zoom:17});
 }
 function render(fit){
@@ -136,10 +146,13 @@ function render(fit){
     const sec=document.createElement('section');sec.className='event';
     sec.innerHTML=`<h2>${esc(e.n)}<small>${items.length} basin${items.length>1?'s':''}</small></h2><div class="date">${fmt(e.d)}</div>`;
     list.appendChild(sec);
-    items.forEach(b=>{const it=document.createElement('button');it.className='item'+(b.p==='city'?'':' approx');it.textContent=b.a;it.onclick=()=>show(b,true);list.appendChild(it)});
+    items.forEach(b=>{const it=document.createElement('button');it.className='item'+(b.p==='city'?'':' approx');it.textContent=b.a;if(b.ph&&b.ph.length){const c=document.createElement('span');c.className='cam';c.textContent='photo';it.appendChild(c)}it.onclick=()=>show(b,true);list.appendChild(it)});
   }
   if(fit&&vis.length){const bb=new mapboxgl.LngLatBounds();vis.forEach(b=>bb.extend([b.lon,b.lat]));map.fitBounds(bb,{padding:50,maxZoom:16,duration:fit===true&&map._fitted?600:0});map._fitted=true}
 }
+function openLb(src){const l=document.getElementById('lb');l.querySelector('img').src=src;l.classList.add('on')}
+document.getElementById('lb').onclick=()=>document.getElementById('lb').classList.remove('on');
+document.addEventListener('keydown',e=>{if(e.key==='Escape')document.getElementById('lb').classList.remove('on')});
 </script>
 </body>
 </html>
