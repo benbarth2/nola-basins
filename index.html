@@ -98,7 +98,7 @@ const fmt=d=>new Date(d+'T12:00:00').toLocaleDateString('en-US',{month:'short',d
 const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 let basins=[],active=null,map,popup;
 
-const map0=new mapboxgl.Map({container:'map',style:'mapbox://styles/mapbox/light-v11',center:[-90.085,29.955],zoom:11.6});
+const map0=new mapboxgl.Map({container:'map',style:'mapbox://styles/mapbox/light-v11',center:[-90.085,29.955],zoom:11.6,minZoom:10,maxBounds:[[-90.40,29.80],[-89.75,30.15]]});
 map=map0;map.addControl(new mapboxgl.NavigationControl({showCompass:false}),'top-right');
 popup=new mapboxgl.Popup({offset:10,closeButton:false});
 
