@@ -31,10 +31,7 @@ h1{font:800 1.5rem/1.15 Archivo,sans-serif;margin:0 0 14px;letter-spacing:-.01em
 input[type=search]{width:100%;font:inherit;font-size:.95rem;padding:10px 12px;border:1px solid var(--line);
   border-radius:8px;background:var(--surface);color:var(--ink)}
 input[type=search]:focus{outline:2px solid var(--accent);outline-offset:1px}
-.chips{display:flex;flex-wrap:wrap;gap:6px}
-.chip{font:500 .8rem/1 "IBM Plex Sans",sans-serif;padding:7px 10px;border-radius:99px;border:1px solid var(--line);
-  background:var(--surface);color:var(--ink);cursor:pointer}
-.chip[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:#fff}
+select{width:100%;font:inherit;font-size:.92rem;padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink)}
 #list{flex:1;overflow-y:auto;padding:6px 0 24px}
 .event{padding:14px 20px 4px}
 .event h2{font:700 .95rem/1.2 Archivo,sans-serif;margin:0;display:flex;justify-content:space-between;gap:8px}
@@ -73,12 +70,12 @@ footer a{color:var(--accent)}
   <header>
     <p class="kicker">New Orleans</p>
     <h1>Catch basins cleared by neighbors</h1>
-    <div class="count"><b id="total">–</b><span>basins mapped from<br><span id="events">–</span> volunteer cleanups</span></div>
-    <p class="sub">Clogged catch basins flood streets. These are the ones volunteers have cleared, organized by Benjamin Barth with neighborhood associations around the city.</p>
+    <div class="count"><b id="total">–</b><span>catch basins cleared in<br><span id="events">–</span> cleanups since March</span></div>
+    <p class="sub">Clogged catch basins flood streets. These are the ones cleared by Benjamin Barth, on his own and with neighborhood associations and volunteers around the city.</p>
   </header>
   <div class="controls">
     <input type="search" id="q" placeholder="Search a street or address" aria-label="Search a street or address">
-    <div class="chips" id="chips" role="group" aria-label="Filter by cleanup"></div>
+    <select id="ev" aria-label="Filter by cleanup"></select>
   </div>
   <div id="list" aria-live="polite"></div>
   <footer>Basin locations from the City of New Orleans catch basin layer. <a href="routes.html">Route planner</a></footer>
@@ -99,11 +96,11 @@ popup=new mapboxgl.Popup({offset:10,closeButton:false});
 fetch('basins.json').then(r=>r.json()).then(data=>{
   basins=data.map((b,i)=>({...b,i,key:b.d+'|'+b.n}));
   const events=[...new Map(basins.map(b=>[b.key,{key:b.key,d:b.d,n:b.n}])).values()].sort((a,b)=>b.d.localeCompare(a.d)||a.n.localeCompare(b.n));
-  document.getElementById('total').textContent=basins.length;
+  document.getElementById('total').textContent=new Set(basins.map(b=>b.cid||b.a+b.lat)).size;
   document.getElementById('events').textContent=events.length;
-  const chips=document.getElementById('chips');
-  const mk=(label,key)=>{const c=document.createElement('button');c.className='chip';c.textContent=label;c.setAttribute('aria-pressed',key===null);c.onclick=()=>{active=key;[...chips.children].forEach(x=>x.setAttribute('aria-pressed',x===c));render(true)};chips.appendChild(c)};
-  mk('All',null);events.forEach(e=>mk(e.n,e.key));
+  const ev=document.getElementById('ev');
+  ev.innerHTML='<option value="">All cleanups</option>'+events.map(e=>`<option value="${esc(e.key)}">${esc(fmt(e.d))} · ${esc(e.n)}</option>`).join('');
+  ev.onchange=()=>{active=ev.value||null;render(true)};
   window._events=events;
   const geo={type:'FeatureCollection',features:basins.map(b=>({type:'Feature',id:b.i,properties:{i:b.i,p:b.p},geometry:{type:'Point',coordinates:[b.lon,b.lat]}}))};
   const add=()=>{
