@@ -1,356 +1,148 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <meta charset="utf-8">
-    <title>Live Catch Basin Operations Dashboard</title>
-    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
-    <link href="https://api.mapbox.com/mapbox-gl-js/v3.2.0/mapbox-gl.css" rel="stylesheet">
-    <script src="https://api.mapbox.com/mapbox-gl-js/v3.2.0/mapbox-gl.js"></script>
-    
-    <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.4.3/mapbox-gl-draw.js"></script>
-    <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.4.3/mapbox-gl-draw.css" type="text/css" />
-    
-    <style>
-        body { margin: 0; padding: 0; display: flex; height: 100vh; font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #1a1a1a; color: #fff; }
-        #sidebar { width: 350px; display: flex; flex-direction: column; border-right: 1px solid #333; z-index: 1; box-shadow: 2px 0 5px rgba(0,0,0,0.5); }
-        #search-container { padding: 20px; background-color: #222; border-bottom: 1px solid #333; }
-        #search-container h2 { margin: 0 0 10px 0; font-size: 18px; color: #ff4444; }
-        #searchBox { width: 100%; padding: 10px; border-radius: 5px; border: none; background-color: #333; color: white; font-size: 16px; outline: none; box-sizing: border-box; margin-bottom: 10px; }
-        #searchBox:focus { background-color: #444; }
-        #routeBtn { width: 100%; padding: 12px; background-color: #28a745; color: white; border: none; border-radius: 5px; font-weight: bold; font-size: 14px; cursor: pointer; transition: background 0.2s; }
-        #routeBtn:hover { background-color: #218838; }
-        #list-container { flex: 1; overflow-y: auto; background-color: #1a1a1a; padding: 10px; }
-        .list-item { padding: 15px; border-bottom: 1px solid #333; cursor: pointer; border-radius: 5px; margin-bottom: 5px; transition: background 0.2s; }
-        .list-item:hover { background-color: #333; }
-        .list-item-title { font-weight: bold; margin-bottom: 5px; font-size: 14px; }
-        .list-item-sub { font-size: 12px; color: #aaa; margin-bottom: 5px; }
-        .route-stops { font-size: 11px; color: #888; margin-top: 8px; padding-left: 10px; border-left: 2px solid #555; }
-        #map { flex: 1; position: relative; }
-        .mapboxgl-popup-content { font-family: Arial, sans-serif; padding: 15px; color: #000; border-radius: 8px; }
-    </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>New Orleans Catch Basin Cleanups</title>
+<meta name="description" content="Every catch basin cleared by volunteer cleanups organized by Benjamin Barth across New Orleans.">
+<link href="https://api.mapbox.com/mapbox-gl-js/v3.2.0/mapbox-gl.css" rel="stylesheet">
+<script src="https://api.mapbox.com/mapbox-gl-js/v3.2.0/mapbox-gl.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ground:#F3F1EC; --surface:#FFFFFF; --ink:#1B1E1D; --muted:#66706D; --line:#DDDAD2;
+  --accent:#1F6F5C; --accent-soft:#DCEBE5; --pin:#1F6F5C; --approx:#B9852F;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font-family:"IBM Plex Sans",system-ui,sans-serif;color:var(--ink);background:var(--ground);
+  display:grid;grid-template-columns:380px 1fr;height:100vh;overflow:hidden}
+aside{display:flex;flex-direction:column;min-height:0;border-right:1px solid var(--line);background:var(--ground)}
+header{padding:22px 20px 16px;border-bottom:1px solid var(--line)}
+.kicker{font:600 .72rem/1 Archivo,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin:0 0 10px}
+h1{font:800 1.5rem/1.15 Archivo,sans-serif;margin:0 0 14px;letter-spacing:-.01em}
+.count{display:flex;align-items:baseline;gap:10px}
+.count b{font:800 3rem/1 Archivo,sans-serif;color:var(--accent);font-variant-numeric:tabular-nums}
+.count span{color:var(--muted);font-size:.95rem;line-height:1.3}
+.sub{margin:12px 0 0;color:var(--muted);font-size:.88rem;line-height:1.45}
+.controls{padding:14px 20px 12px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:10px}
+input[type=search]{width:100%;font:inherit;font-size:.95rem;padding:10px 12px;border:1px solid var(--line);
+  border-radius:8px;background:var(--surface);color:var(--ink)}
+input[type=search]:focus{outline:2px solid var(--accent);outline-offset:1px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font:500 .8rem/1 "IBM Plex Sans",sans-serif;padding:7px 10px;border-radius:99px;border:1px solid var(--line);
+  background:var(--surface);color:var(--ink);cursor:pointer}
+.chip[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:#fff}
+#list{flex:1;overflow-y:auto;padding:6px 0 24px}
+.event{padding:14px 20px 4px}
+.event h2{font:700 .95rem/1.2 Archivo,sans-serif;margin:0;display:flex;justify-content:space-between;gap:8px}
+.event h2 small{font:500 .8rem "IBM Plex Sans",sans-serif;color:var(--muted)}
+.event .date{color:var(--muted);font-size:.8rem;margin:3px 0 6px}
+.item{display:block;width:100%;text-align:left;border:0;background:none;font:inherit;font-size:.9rem;color:var(--ink);
+  padding:7px 20px 7px 34px;cursor:pointer;position:relative}
+.item::before{content:"";position:absolute;left:20px;top:13px;width:7px;height:7px;border-radius:50%;background:var(--pin)}
+.item.approx::before{background:var(--approx)}
+.item:hover,.item:focus-visible{background:var(--accent-soft);outline:none}
+.empty{padding:20px;color:var(--muted)}
+#map{position:relative;min-height:0}
+.legend{position:absolute;left:12px;bottom:28px;background:rgba(255,255,255,.94);border:1px solid var(--line);
+  border-radius:8px;padding:8px 11px;font-size:.78rem;color:var(--muted);display:flex;flex-direction:column;gap:4px;z-index:2}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:middle}
+.mapboxgl-popup-content{font-family:"IBM Plex Sans",sans-serif;font-size:.85rem;padding:10px 12px;border-radius:8px}
+.mapboxgl-popup-content b{display:block;font-family:Archivo,sans-serif;font-size:.92rem;margin-bottom:2px}
+.mapboxgl-popup-content .m{color:var(--muted)}
+footer{padding:10px 20px;border-top:1px solid var(--line);font-size:.78rem;color:var(--muted)}
+footer a{color:var(--accent)}
+@media (max-width:800px){
+  body{grid-template-columns:1fr;grid-template-rows:auto 48vh minmax(0,1fr);height:auto;min-height:100vh;overflow:auto}
+  aside{display:contents}
+  header{order:1;padding:18px 16px 14px}
+  #map{order:2;height:48vh}
+  .controls{order:3;padding:12px 16px}
+  #list{order:4;overflow:visible}
+  footer{order:5}
+  .event{padding:12px 16px 4px}.item{padding-left:30px}.item::before{left:16px}
+  h1{font-size:1.3rem}.count b{font-size:2.5rem}
+}
+</style>
 </head>
 <body>
-
-<div id="sidebar">
-    <div id="search-container">
-        <h2>Target Locations</h2>
-        <input type="text" id="searchBox" placeholder="Search by street name...">
-        <button id="routeBtn">Generate Top 5 Routes</button>
-        <button id="filterBtn" style="width: 100%; padding: 12px; background-color: #17a2b8; color: white; border: none; border-radius: 5px; font-weight: bold; font-size: 14px; cursor: pointer; transition: background 0.2s; margin-top: 10px;">Filter by Custom Shape</button>
-    </div>
-    <div id="list-container"></div>
+<aside>
+  <header>
+    <p class="kicker">New Orleans</p>
+    <h1>Catch basins cleared by neighbors</h1>
+    <div class="count"><b id="total">–</b><span>basins mapped from<br><span id="events">–</span> volunteer cleanups</span></div>
+    <p class="sub">Clogged catch basins flood streets. These are the ones volunteers have cleared, organized by Benjamin Barth with neighborhood associations around the city.</p>
+  </header>
+  <div class="controls">
+    <input type="search" id="q" placeholder="Search a street or address" aria-label="Search a street or address">
+    <div class="chips" id="chips" role="group" aria-label="Filter by cleanup"></div>
+  </div>
+  <div id="list" aria-live="polite"></div>
+  <footer>Basin locations from the City of New Orleans catch basin layer. <a href="routes.html">Route planner</a></footer>
+</aside>
+<div id="map">
+  <div class="legend"><span><i style="background:#1F6F5C"></i>Matched to a city basin</span><span><i style="background:#B9852F"></i>Approximate location</span></div>
 </div>
-
-<div id="map"></div>
-
 <script>
-    mapboxgl.accessToken = 'pk.eyJ1IjoiYmJhcnRoMSIsImEiOiJjbW1saHk2cWkxeWxwMndvcGR3cmQ4Znk4In0.qKNF4Ef-mCIVsawr9YShUg'; 
-    const map = new mapboxgl.Map({
-        container: 'map', 
-        style: 'mapbox://styles/mapbox/dark-v11', 
-        center: [-90.0715, 29.9511], 
-        zoom: 11.5 
-    });
+mapboxgl.accessToken='pk.eyJ1IjoiYmJhcnRoMSIsImEiOiJjbW1saHk2cWkxeWxwMndvcGR3cmQ4Znk4In0.qKNF4Ef-mCIVsawr9YShUg';
+const fmt=d=>new Date(d+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let basins=[],active=null,map,popup;
 
-    let masterBasins = [];
-    let listItemsDOM = [];
-    const listContainer = document.getElementById('list-container');
+const map0=new mapboxgl.Map({container:'map',style:'mapbox://styles/mapbox/light-v11',center:[-90.085,29.955],zoom:11.6});
+map=map0;map.addControl(new mapboxgl.NavigationControl({showCompass:false}),'top-right');
+popup=new mapboxgl.Popup({offset:10,closeButton:false});
 
-    // Initialize the Mapbox Draw tool
-    const draw = new MapboxDraw({
-        displayControlsDefault: false,
-        controls: {
-            polygon: true,
-            trash: true
-        },
-        defaultMode: 'simple_select'
-    });
-    
-    // Add the draw tool to the map
-    map.addControl(draw, 'top-right');
+fetch('basins.json').then(r=>r.json()).then(data=>{
+  basins=data.map((b,i)=>({...b,i,key:b.d+'|'+b.n}));
+  const events=[...new Map(basins.map(b=>[b.key,{key:b.key,d:b.d,n:b.n}])).values()].sort((a,b)=>b.d.localeCompare(a.d)||a.n.localeCompare(b.n));
+  document.getElementById('total').textContent=basins.length;
+  document.getElementById('events').textContent=events.length;
+  const chips=document.getElementById('chips');
+  const mk=(label,key)=>{const c=document.createElement('button');c.className='chip';c.textContent=label;c.setAttribute('aria-pressed',key===null);c.onclick=()=>{active=key;[...chips.children].forEach(x=>x.setAttribute('aria-pressed',x===c));render(true)};chips.appendChild(c)};
+  mk('All',null);events.forEach(e=>mk(e.n,e.key));
+  window._events=events;
+  const geo={type:'FeatureCollection',features:basins.map(b=>({type:'Feature',id:b.i,properties:{i:b.i,p:b.p},geometry:{type:'Point',coordinates:[b.lon,b.lat]}}))};
+  const add=()=>{
+    map.addSource('basins',{type:'geojson',data:geo});
+    map.addLayer({id:'basins',type:'circle',source:'basins',paint:{
+      'circle-radius':['interpolate',['linear'],['zoom'],11,3,15,6,18,10],
+      'circle-color':['match',['get','p'],'city','#1F6F5C','#B9852F'],
+      'circle-stroke-color':'#fff','circle-stroke-width':['interpolate',['linear'],['zoom'],11,.5,16,1.5],
+      'circle-opacity':['case',['boolean',['feature-state','hide'],false],0.12,0.95]}});
+    map.on('click','basins',e=>show(basins[e.features[0].properties.i],false));
+    map.on('mouseenter','basins',()=>map.getCanvas().style.cursor='pointer');
+    map.on('mouseleave','basins',()=>map.getCanvas().style.cursor='');
+    render(true);
+  };
+  map.loaded()?add():map.on('load',add);
+  document.getElementById('q').addEventListener('input',()=>render(false));
+}).catch(()=>{document.getElementById('list').innerHTML='<p class="empty">The basin list couldn’t load. Try refreshing.</p>'});
 
-    function getDistance(lat1, lon1, lat2, lon2) {
-        const R = 6371e3; 
-        const rad = Math.PI / 180;
-        const dLat = (lat2 - lat1) * rad;
-        const dLon = (lon2 - lon1) * rad;
-        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                  Math.cos(lat1 * rad) * Math.cos(lat2 * rad) *
-                  Math.sin(dLon/2) * Math.sin(dLon/2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        return R * c; 
-    }
-
-    function isPointInPolygon(point, vs) {
-        let x = point[0], y = point[1];
-        let inside = false;
-        for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
-            let xi = vs[i][0], yi = vs[i][1];
-            let xj = vs[j][0], yj = vs[j][1];
-            let intersect = ((yi > y) != (yj > y))
-                && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
-            if (intersect) inside = !inside;
-        }
-        return inside;
-    }
-
-    map.on('load', () => {
-        // Pre-load our 7-point starter shape into the drawing tool so it's ready to be edited
-        draw.add({
-            'id': 'audubon-boundary',
-            'type': 'Feature',
-            'properties': {},
-            'geometry': {
-                'type': 'Polygon',
-                'coordinates': [[
-                    [-90.1285, 29.9155], 
-                    [-90.1235, 29.9255], 
-                    [-90.1070, 29.9185], 
-                    [-90.1025, 29.9110], 
-                    [-90.1120, 29.9090], 
-                    [-90.1215, 29.9115], 
-                    [-90.1285, 29.9155]  
-                ]]
-            }
-        });
-
-        const baseUrl = "https://data.nola.gov/resource/2jgv-pqrq.json";
-        const query = "?$where=request_reason in('Catch Basin Clogged', 'Catch Basin Not Draining') AND request_status='Pending'&$limit=5000";
-        
-        fetch(encodeURI(baseUrl + query))
-            .then(response => response.json())
-            .then(data => {
-                const uniqueBasinsMap = new Map();
-
-                data.forEach(basin => {
-                    let lat, lng;
-                    if (basin.location && basin.location.latitude) {
-                         lat = parseFloat(basin.location.latitude);
-                         lng = parseFloat(basin.location.longitude);
-                    } else if (basin.latitude && basin.longitude) {
-                         lat = parseFloat(basin.latitude);
-                         lng = parseFloat(basin.longitude);
-                    }
-
-                    if (lat && lng) {
-                        const address = basin.final_address || 'Address Not Provided';
-                        const ticket = basin.service_request || 'N/A';
-                        
-                        const coordKey = `${lat.toFixed(4)},${lng.toFixed(4)}`;
-
-                        if (uniqueBasinsMap.has(coordKey)) {
-                            uniqueBasinsMap.get(coordKey).tickets.push(ticket);
-                        } else {
-                            uniqueBasinsMap.set(coordKey, {
-                                lat: lat,
-                                lng: lng,
-                                address: address,
-                                tickets: [ticket]
-                            });
-                        }
-                    }
-                });
-
-                let idCounter = 0; 
-                
-                uniqueBasinsMap.forEach((basinData) => {
-                    const reportCount = basinData.tickets.length;
-                    
-                    const displayAddress = reportCount > 1 
-                        ? `${basinData.address} <span style="color:#ffc107">(${reportCount} Reports)</span>` 
-                        : basinData.address;
-
-                    const cleanTextAddress = reportCount > 1 
-                        ? `${basinData.address} (${reportCount} Reports)` 
-                        : basinData.address;
-
-                    const popupText = `<strong>${basinData.address}</strong><br>Coords: ${basinData.lat.toFixed(4)}, ${basinData.lng.toFixed(4)}<br>Tickets (${reportCount}): ${basinData.tickets.join(', ')}<br>Status: Pending`;
-                    const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(popupText);
-                    const marker = new mapboxgl.Marker({ color: '#ff4444' })
-                        .setLngLat([basinData.lng, basinData.lat])
-                        .setPopup(popup)
-                        .addTo(map);
-
-                    const listItem = document.createElement('div');
-                    listItem.className = 'list-item';
-                    listItem.innerHTML = `<div class="list-item-title">${displayAddress}</div>`;
-                    
-                    listItem.addEventListener('click', () => {
-                        map.flyTo({ center: [basinData.lng, basinData.lat], zoom: 16 });
-                        popup.addTo(map);
-                    });
-                    listContainer.appendChild(listItem);
-
-                    listItemsDOM.push({ element: listItem, addressText: basinData.address.toLowerCase() });
-                    masterBasins.push({
-                        id: idCounter++,
-                        lat: basinData.lat,
-                        lng: basinData.lng,
-                        address: cleanTextAddress,
-                        marker: marker,
-                        element: listItem
-                    });
-                });
-            })
-            .catch(err => console.error("Error loading data:", err));
-    });
-
-    document.getElementById('searchBox').addEventListener('input', (e) => {
-        const term = e.target.value.toLowerCase();
-        listItemsDOM.forEach(item => {
-            item.element.style.display = item.addressText.includes(term) ? 'block' : 'none';
-        });
-    });
-
-    document.getElementById('routeBtn').addEventListener('click', () => {
-        if (masterBasins.length === 0) {
-            alert("Still loading map data. Give it a few seconds!");
-            return;
-        }
-
-        const btn = document.getElementById('routeBtn');
-        btn.innerText = "Calculating Routes...";
-        btn.style.backgroundColor = "#ffc107"; 
-
-        setTimeout(() => {
-            const searchRadiusDeg = 0.005; 
-
-            masterBasins.forEach(b1 => {
-                let nearby = [];
-                for (let i = 0; i < masterBasins.length; i++) {
-                    let b2 = masterBasins[i];
-                    if (Math.abs(b1.lat - b2.lat) < searchRadiusDeg && Math.abs(b1.lng - b2.lng) < searchRadiusDeg) {
-                        nearby.push({
-                            id: b2.id,
-                            dist: getDistance(b1.lat, b1.lng, b2.lat, b2.lng),
-                            data: b2
-                        });
-                    }
-                }
-                nearby.sort((a, b) => a.dist - b.dist);
-                
-                if (nearby.length >= 5) {
-                    b1.cluster = nearby.slice(0, 5);
-                    b1.radius = b1.cluster[4].dist; 
-                } else {
-                    b1.radius = 999999; 
-                }
-            });
-
-            let sortedByDensity = [...masterBasins]
-                .filter(b => b.radius !== 999999) 
-                .sort((a, b) => a.radius - b.radius);
-
-            let finalRoutes = [];
-            let usedBasinIds = new Set();
-
-            for (let target of sortedByDensity) {
-                let hasOverlap = target.cluster.some(neighbor => usedBasinIds.has(neighbor.id));
-                if (!hasOverlap) {
-                    finalRoutes.push(target);
-                    target.cluster.forEach(n => usedBasinIds.add(n.id));
-                }
-                if (finalRoutes.length >= 5) break; 
-            }
-
-            listContainer.innerHTML = ''; 
-            const routeColors = ['#00e5ff', '#39ff14', '#fdf500', '#ff00ff', '#ff8800'];
-
-            masterBasins.forEach(b => {
-                if(b.marker && b.marker.getElement()) {
-                    b.marker.getElement().style.opacity = '0.1';
-                }
-            });
-
-            finalRoutes.forEach((route, index) => {
-                let color = routeColors[index];
-                let stopsHTML = "";
-                
-                route.cluster.forEach(stop => {
-                    const el = stop.data.marker.getElement();
-                    el.style.opacity = '1';
-                    
-                    const coloredPaths = el.querySelectorAll('[fill]');
-                    coloredPaths.forEach(path => {
-                        if(path.getAttribute('fill') !== 'none') {
-                            path.setAttribute('fill', color);
-                        }
-                    });
-
-                    stopsHTML += `<div>• ${stop.data.address}<br>&nbsp;&nbsp;<span style="color:#888; font-size:10px;">${stop.data.lat.toFixed(4)}, ${stop.data.lng.toFixed(4)}</span></div>`;
-                });
-
-                const routeElement = document.createElement('div');
-                routeElement.className = 'list-item';
-                routeElement.style.borderLeft = `5px solid ${color}`;
-                routeElement.innerHTML = `
-                    <div class="list-item-title">Route ${index + 1}: ${route.address}</div>
-                    <div class="list-item-sub">5 Unique Basins inside ${Math.round(route.radius)} meters</div>
-                    <div class="route-stops">${stopsHTML}</div>
-                `;
-                
-                routeElement.addEventListener('click', () => {
-                    map.flyTo({ center: [route.lng, route.lat], zoom: 16 });
-                });
-
-                listContainer.appendChild(routeElement);
-            });
-
-            btn.innerText = "Routes Generated!";
-            btn.style.backgroundColor = "#28a745";
-            
-        }, 50); 
-    });
-
-    let isFiltered = false;
-
-    document.getElementById('filterBtn').addEventListener('click', (e) => {
-        isFiltered = !isFiltered;
-        
-        if (isFiltered) {
-            // Get the current shape drawn on the map
-            const drawnData = draw.getAll();
-            
-            if (drawnData.features.length === 0) {
-                alert("Please draw a shape on the map first!");
-                isFiltered = false;
-                return;
-            }
-            
-            // Extract the coordinates of the first polygon drawn
-            const customPoly = drawnData.features[0].geometry.coordinates[0];
-
-            e.target.innerText = "Show Entire City";
-            e.target.style.backgroundColor = "#6c757d";
-            
-            masterBasins.forEach(b => {
-                const inside = isPointInPolygon([b.lng, b.lat], customPoly);
-                if (inside) {
-                    b.marker.getElement().style.display = 'block';
-                    b.element.style.display = 'block';
-                } else {
-                    b.marker.getElement().style.display = 'none';
-                    b.element.style.display = 'none';
-                }
-            });
-            
-            // Fly to the center of the drawn shape (roughly)
-            map.flyTo({ center: customPoly[0], zoom: 14.2 });
-            
-        } else {
-            e.target.innerText = "Filter by Custom Shape";
-            e.target.style.backgroundColor = "#17a2b8";
-            
-            masterBasins.forEach(b => {
-                b.marker.getElement().style.display = 'block';
-                const term = document.getElementById('searchBox').value.toLowerCase();
-                b.element.style.display = b.address.toLowerCase().includes(term) ? 'block' : 'none';
-            });
-            
-            map.flyTo({ center: [-90.0715, 29.9511], zoom: 11.5 });
-        }
-    });
+function show(b,fly){
+  popup.setLngLat([b.lon,b.lat]).setHTML(`<b>${esc(b.a)}</b><span class="m">${esc(b.n)} cleanup · ${fmt(b.d)}${b.p==='city'?'':'<br>Approximate location'}</span>`).addTo(map);
+  if(fly)map.flyTo({center:[b.lon,b.lat],zoom:17});
+}
+function render(fit){
+  const q=document.getElementById('q').value.trim().toLowerCase();
+  const vis=basins.filter(b=>(!active||b.key===active)&&(!q||b.a.toLowerCase().includes(q)));
+  const on=new Set(vis.map(b=>b.i));
+  if(map.getSource('basins'))basins.forEach(b=>map.setFeatureState({source:'basins',id:b.i},{hide:!on.has(b.i)}));
+  const list=document.getElementById('list');list.innerHTML='';
+  if(!vis.length){list.innerHTML='<p class="empty">No basins match that search.</p>';return}
+  for(const e of window._events||[]){
+    const st=a=>a.replace(/^[\d–\-\s]+/,'').toLowerCase(),num=a=>parseInt(a)||0;
+    const items=vis.filter(b=>b.key===e.key).sort((x,y)=>st(x.a).localeCompare(st(y.a))||num(x.a)-num(y.a));if(!items.length)continue;
+    const sec=document.createElement('section');sec.className='event';
+    sec.innerHTML=`<h2>${esc(e.n)}<small>${items.length} basin${items.length>1?'s':''}</small></h2><div class="date">${fmt(e.d)}</div>`;
+    list.appendChild(sec);
+    items.forEach(b=>{const it=document.createElement('button');it.className='item'+(b.p==='city'?'':' approx');it.textContent=b.a;it.onclick=()=>show(b,true);list.appendChild(it)});
+  }
+  if(fit&&vis.length){const bb=new mapboxgl.LngLatBounds();vis.forEach(b=>bb.extend([b.lon,b.lat]));map.fitBounds(bb,{padding:50,maxZoom:16,duration:fit===true&&map._fitted?600:0});map._fitted=true}
+}
 </script>
-
 </body>
 </html>
