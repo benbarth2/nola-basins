@@ -102,7 +102,7 @@ const map0=new mapboxgl.Map({container:'map',style:'mapbox://styles/mapbox/light
 map=map0;map.addControl(new mapboxgl.NavigationControl({showCompass:false}),'top-right');
 popup=new mapboxgl.Popup({offset:10,closeButton:false});
 
-fetch('basins.json?v=2026-11-11e').then(r=>r.json()).then(data=>{
+fetch('basins.json?v=2026-11-11f').then(r=>r.json()).then(data=>{
   basins=data.map((b,i)=>({...b,i,key:b.d+'|'+b.n}));
   const events=[...new Map(basins.map(b=>[b.key,{key:b.key,d:b.d,n:b.n}])).values()].sort((a,b)=>b.d.localeCompare(a.d)||a.n.localeCompare(b.n));
   document.getElementById('total').textContent=new Set(basins.map(b=>b.cid||b.a+b.lat)).size;
