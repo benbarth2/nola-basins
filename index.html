@@ -70,7 +70,7 @@ footer a{color:var(--accent)}
   <header>
     <p class="kicker">New Orleans</p>
     <h1>Catch basins cleared by neighbors</h1>
-    <div class="count"><b id="total">–</b><span>catch basins cleared in<br><span id="events">–</span> cleanups since March</span></div>
+    <div class="count"><b id="total">–</b><span>catch basins cleared in<br><span id="events">–</span> cleanups since February</span></div>
     <p class="sub">Clogged catch basins flood streets. These are the ones cleared by Benjamin Barth, on his own and with neighborhood associations and volunteers around the city.</p>
   </header>
   <div class="controls">
@@ -93,7 +93,7 @@ const map0=new mapboxgl.Map({container:'map',style:'mapbox://styles/mapbox/light
 map=map0;map.addControl(new mapboxgl.NavigationControl({showCompass:false}),'top-right');
 popup=new mapboxgl.Popup({offset:10,closeButton:false});
 
-fetch('basins.json?v=2026-11-11b').then(r=>r.json()).then(data=>{
+fetch('basins.json?v=2026-11-11c').then(r=>r.json()).then(data=>{
   basins=data.map((b,i)=>({...b,i,key:b.d+'|'+b.n}));
   const events=[...new Map(basins.map(b=>[b.key,{key:b.key,d:b.d,n:b.n}])).values()].sort((a,b)=>b.d.localeCompare(a.d)||a.n.localeCompare(b.n));
   document.getElementById('total').textContent=new Set(basins.map(b=>b.cid||b.a+b.lat)).size;
