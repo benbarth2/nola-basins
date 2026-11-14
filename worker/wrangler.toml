@@ -2,7 +2,7 @@ name = "grate-city-api"
 main = "src/index.js"
 compatibility_date = "2025-10-01"
 account_id = "225e04179dd068b4f60ea5a4f229c545"
-workers_dev = true
+workers_dev = false
 
 routes = [
   { pattern = "api.grate.city", custom_domain = true }
