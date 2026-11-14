@@ -3,7 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>New Orleans Catch Basin Cleanups</title>
+<title>Grate City · New Orleans catch basin cleanups</title>
+<link rel="icon" href="logo.svg" type="image/svg+xml">
 <meta name="description" content="Every catch basin cleared by volunteer cleanups organized by Benjamin Barth across New Orleans.">
 <link href="https://api.mapbox.com/mapbox-gl-js/v3.2.0/mapbox-gl.css" rel="stylesheet">
 <script src="https://api.mapbox.com/mapbox-gl-js/v3.2.0/mapbox-gl.js"></script>
@@ -12,8 +13,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{
-  --ground:#F3F1EC; --surface:#FFFFFF; --ink:#1B1E1D; --muted:#66706D; --line:#DDDAD2;
-  --accent:#1F6F5C; --accent-soft:#DCEBE5; --pin:#1F6F5C; --approx:#B9852F;
+  --ground:#E4E1DA; --surface:#FBFAF6; --ink:#1D1C1A; --muted:#6B675F; --line:#CFCBC2;
+  --accent:#B84600; --accent-soft:#F3E4D8; --pin:#F85E00; --approx:#8E8A82;
 }
 *{box-sizing:border-box}
 html,body{margin:0;height:100%}
@@ -22,6 +23,7 @@ body{font-family:"IBM Plex Sans",system-ui,sans-serif;color:var(--ink);backgroun
 aside{display:flex;flex-direction:column;min-height:0;border-right:1px solid var(--line);background:var(--ground)}
 header{padding:22px 20px 16px;border-bottom:1px solid var(--line)}
 .kicker{font:600 .72rem/1 Archivo,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin:0 0 10px}
+.brand{display:flex;align-items:center;gap:10px;margin:0 0 16px}.brand img{display:block}.brand .wm{height:26px;width:auto}
 h1{font:800 1.5rem/1.15 Archivo,sans-serif;margin:0 0 14px;letter-spacing:-.01em}
 .count{display:flex;align-items:baseline;gap:10px}
 .count b{font:800 3rem/1 Archivo,sans-serif;color:var(--accent);font-variant-numeric:tabular-nums}
@@ -44,7 +46,7 @@ select{width:100%;font:inherit;font-size:.92rem;padding:9px 10px;border:1px soli
 .item:hover,.item:focus-visible{background:var(--accent-soft);outline:none}
 .empty{padding:20px;color:var(--muted)}
 #map{position:relative;min-height:0}
-.legend{position:absolute;left:12px;bottom:28px;background:rgba(255,255,255,.94);border:1px solid var(--line);
+.legend{position:absolute;left:12px;bottom:28px;background:rgba(251,250,246,.94);border:1px solid var(--line);
   border-radius:8px;padding:8px 11px;font-size:.78rem;color:var(--muted);display:flex;flex-direction:column;gap:4px;z-index:2}
 .legend i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:middle}
 .mapboxgl-popup-content{font-family:"IBM Plex Sans",sans-serif;font-size:.85rem;padding:10px 12px;border-radius:8px}
@@ -76,6 +78,7 @@ footer a{color:var(--accent)}
 <body>
 <aside>
   <header>
+    <div class="brand"><img src="logo.svg" alt="" width="30" height="32"><img src="wordmark.svg" alt="Grate City" class="wm" width="110" height="30"></div>
     <p class="kicker">New Orleans</p>
     <h1>Catch basins cleared by neighbors</h1>
     <div class="count"><b id="total">–</b><span>different catch basins cleared<br>across <span id="events">–</span> cleanups since November 2025</span></div>
@@ -89,7 +92,7 @@ footer a{color:var(--accent)}
   <footer>Basin locations from the City of New Orleans catch basin layer. <a href="routes.html">Route planner</a></footer>
 </aside>
 <div id="map">
-  <div class="legend"><span><i style="background:#1F6F5C"></i>Matched to a city basin</span><span><i style="background:#B9852F"></i>Approximate location</span></div>
+  <div class="legend"><span><i style="background:#F85E00"></i>Matched to a city basin</span><span><i style="background:#8E8A82"></i>Approximate location</span></div>
 </div>
 <div id="lb" role="dialog" aria-label="Photo"><img alt=""></div>
 <script>
@@ -116,7 +119,7 @@ fetch('basins.json?v=2026-11-11g').then(r=>r.json()).then(data=>{
     map.addSource('basins',{type:'geojson',data:geo});
     map.addLayer({id:'basins',type:'circle',source:'basins',paint:{
       'circle-radius':['interpolate',['linear'],['zoom'],11,3,15,6,18,10],
-      'circle-color':['match',['get','p'],'city','#1F6F5C','#B9852F'],
+      'circle-color':['match',['get','p'],'city','#F85E00','#8E8A82'],
       'circle-stroke-color':'#fff','circle-stroke-width':['interpolate',['linear'],['zoom'],11,.5,16,1.5],
       'circle-opacity':['case',['boolean',['feature-state','hide'],false],0.12,0.95]}});
     map.on('click','basins',e=>show(basins[e.features[0].properties.i],false));
