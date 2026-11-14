@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Grate City · Review submissions</title>
+<link rel="icon" href="logo.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#1D1C1A;--muted:#6B675F;--line:#E2DFD9;--accent:#B84600;--btn:#C94A00;--soft:#F7F5F1;--ok:#2F6B2A;--bad:#A3260F}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Hanken Grotesk",system-ui,sans-serif;color:var(--ink);background:#fff}
+.wrap{max-width:980px;margin:0 auto;padding:22px 16px 60px}
+.top{display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap}
+.top img{display:block}.top .wm{height:24px;width:auto}
+.top h1{font:800 1.15rem/1 "Hanken Grotesk",sans-serif;margin:0 0 0 6px;color:var(--muted)}
+.top a{margin-left:auto;color:var(--accent);font-weight:600;font-size:.9rem}
+.login{max-width:380px;margin:60px auto;border:1px solid var(--line);border-radius:12px;padding:22px}
+.login h2{margin:0 0 6px;font-size:1.2rem}.login p{color:var(--muted);font-size:.9rem;margin:0 0 14px}
+input[type=password],input[type=text],input[type=date]{width:100%;font:inherit;font-size:.95rem;padding:9px 11px;border:1px solid #CFCBC2;border-radius:8px;color:var(--ink)}
+input:focus{outline:2px solid var(--accent);outline-offset:1px}
+button{font:inherit}
+.primary{font-weight:700;color:#fff;background:var(--btn);border:0;border-radius:8px;padding:10px 16px;cursor:pointer}
+.primary:hover{background:#A93E00}
+.ghost{font-weight:600;background:rgba(29,28,26,.07);color:var(--ink);border:0;border-radius:8px;padding:10px 14px;cursor:pointer}
+.reject{font-weight:600;background:#fff;color:var(--bad);border:1px solid #E7C1B8;border-radius:8px;padding:10px 14px;cursor:pointer}
+button:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.err{color:var(--bad);font-size:.9rem;min-height:1em}
+.tabs{display:flex;gap:6px;border-bottom:1px solid var(--line);margin-bottom:16px}
+.tabs button{border:0;background:none;padding:10px 12px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
+.tabs button[aria-selected=true]{color:var(--ink);border-bottom-color:var(--btn)}
+.tabs .n{display:inline-block;min-width:20px;padding:1px 6px;border-radius:999px;background:var(--soft);font-size:.78rem;margin-left:4px}
+.card{border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px;display:grid;grid-template-columns:260px 1fr;gap:16px}
+.card .map{width:100%;height:180px;border-radius:8px;object-fit:cover;background:var(--soft)}
+.pics{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.pics img{width:120px;height:120px;object-fit:cover;border-radius:6px;cursor:zoom-in;background:var(--soft)}
+.meta{font-size:.85rem;color:var(--muted);margin:0 0 10px;line-height:1.5}
+.meta b{color:var(--ink)}
+.note{background:var(--soft);border-radius:8px;padding:8px 10px;font-size:.9rem;margin:0 0 10px}
+.fields{display:grid;grid-template-columns:2fr 1.4fr 1fr;gap:8px 10px;margin-bottom:12px}
+.fields label{font-size:.78rem;font-weight:700;display:block;margin-bottom:4px}
+.acts{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.status{font-size:.85rem;font-weight:600}
+.empty{color:var(--muted);padding:30px 0;text-align:center}
+#lb{position:fixed;inset:0;background:rgba(10,12,12,.92);display:none;align-items:center;justify-content:center;padding:20px;cursor:zoom-out;z-index:9}
+#lb.on{display:flex}#lb img{max-width:100%;max-height:100%;border-radius:6px}
+@media (max-width:720px){.card{grid-template-columns:1fr}.fields{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top"><img src="logo.svg" alt="" width="26" height="28"><img src="wordmark.svg" alt="Grate City" class="wm" width="100" height="27"><h1>Review submissions</h1><a href="./">Back to the map</a></div>
+
+  <form class="login" id="login" hidden>
+    <h2>Admin sign-in</h2>
+    <p>Enter the admin key you saved in GitHub as <code>ADMIN_KEY</code>. This browser will remember it.</p>
+    <label for="key" style="font-weight:700;font-size:.85rem">Admin key</label>
+    <input type="password" id="key" autocomplete="current-password" required style="margin:6px 0 12px">
+    <p class="err" id="loginErr" role="alert"></p>
+    <button class="primary" type="submit">Sign in</button>
+  </form>
+
+  <div id="app" hidden>
+    <div class="tabs" role="tablist">
+      <button role="tab" data-s="pending" aria-selected="true">Waiting <span class="n" id="n-pending">0</span></button>
+      <button role="tab" data-s="approved" aria-selected="false">Approved <span class="n" id="n-approved">0</span></button>
+      <button role="tab" data-s="rejected" aria-selected="false">Rejected <span class="n" id="n-rejected">0</span></button>
+      <button class="ghost" id="logout" style="margin-left:auto;padding:6px 10px;font-size:.85rem">Sign out</button>
+    </div>
+    <div id="items" aria-live="polite"></div>
+  </div>
+</div>
+<div id="lb" role="dialog" aria-label="Photo"><img alt=""></div>
+<script>
+const API=new URLSearchParams(location.search).get('api')||'https://api.grate.city';
+const TOKEN='pk.eyJ1IjoiYmJhcnRoMSIsImEiOiJjbW1saHk2cWkxeWxwMndvcGR3cmQ4Znk4In0.qKNF4Ef-mCIVsawr9YShUg';
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let key='';try{key=localStorage.getItem('gc-admin')||''}catch{}
+let tab='pending';
+const call=(path,opt={})=>fetch(API+path,{...opt,headers:{...(opt.headers||{}),Authorization:'Bearer '+key}});
+
+async function start(){
+  if(!key){$('login').hidden=false;$('app').hidden=true;$('key').focus();return}
+  const r=await call('/admin/check').catch(()=>null);
+  if(!r||!r.ok){$('loginErr').textContent=r&&r.status===401?'That key didn’t work.':'Couldn’t reach the submissions service.';try{localStorage.removeItem('gc-admin')}catch{};key='';$('login').hidden=false;$('app').hidden=true;return}
+  $('login').hidden=true;$('app').hidden=false;load();
+}
+$('login').onsubmit=e=>{e.preventDefault();key=$('key').value.trim();try{localStorage.setItem('gc-admin',key)}catch{};$('loginErr').textContent='';start()};
+$('logout').onclick=()=>{try{localStorage.removeItem('gc-admin')}catch{};key='';$('key').value='';start()};
+document.querySelectorAll('[role=tab]').forEach(b=>b.onclick=()=>{tab=b.dataset.s;document.querySelectorAll('[role=tab]').forEach(x=>x.setAttribute('aria-selected',x===b));load()});
+
+async function load(){
+  $('items').innerHTML='<p class="empty">Loading…</p>';
+  const r=await call('/admin/list?status='+tab);
+  if(!r.ok){$('items').innerHTML='<p class="empty">Couldn’t load submissions.</p>';return}
+  const j=await r.json();
+  for(const s of ['pending','approved','rejected'])$('n-'+s).textContent=j.counts[s]||0;
+  if(!j.items.length){$('items').innerHTML=`<p class="empty">${tab==='pending'?'Nothing waiting for review.':'None yet.'}</p>`;return}
+  $('items').innerHTML='';
+  for(const s of j.items)$('items').appendChild(card(s));
+}
+
+function card(s){
+  const el=document.createElement('article');el.className='card';
+  const staticMap=`https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/pin-l+c94a00(${s.lon},${s.lat})/${s.lon},${s.lat},17/520x360@2x?access_token=${TOKEN}`;
+  const gmaps=`https://www.google.com/maps/search/?api=1&query=${s.lat},${s.lon}`;
+  const pics=s.photo_ids.map(i=>`<img src="${API}/photo/${i}?k=${encodeURIComponent(key)}" alt="Submitted photo" loading="lazy">`).join('');
+  el.innerHTML=`
+    <div><a href="${gmaps}" target="_blank" rel="noopener"><img class="map" src="${staticMap}" alt="Map of the pin"></a>
+      <div class="pics">${pics||'<span class="meta">No photos</span>'}</div></div>
+    <div>
+      <p class="meta"><b>#${s.id}</b> · sent ${esc(s.created)} UTC${s.name?` · from <b>${esc(s.name)}</b>`:''}${s.email?` · <a href="mailto:${esc(s.email)}">${esc(s.email)}</a>`:''}</p>
+      ${s.note?`<p class="note">${esc(s.note)}</p>`:''}
+      <div class="fields">
+        <div><label for="a${s.id}">Address shown on map</label><input type="text" id="a${s.id}" value="${esc(s.address)}"></div>
+        <div><label for="l${s.id}">Cleanup name</label><input type="text" id="l${s.id}" value="${esc(s.label||'')}" placeholder="Neighbor submissions"></div>
+        <div><label for="d${s.id}">Date</label><input type="date" id="d${s.id}" value="${esc(s.cleaned)}"></div>
+      </div>
+      <div class="acts">
+        ${s.status!=='approved'?`<button class="primary" data-a="approve">Approve</button>`:`<button class="primary" data-a="approve">Save changes</button>`}
+        ${s.status!=='rejected'?`<button class="reject" data-a="reject">${s.status==='approved'?'Remove from map':'Reject'}</button>`:''}
+        ${s.status!=='pending'?`<button class="ghost" data-a="pending">Move back to waiting</button>`:''}
+        <span class="status" role="status"></span>
+      </div>
+    </div>`;
+  el.querySelectorAll('.pics img').forEach(i=>i.onclick=()=>{$('lb').querySelector('img').src=i.src;$('lb').classList.add('on')});
+  el.querySelectorAll('[data-a]').forEach(b=>b.onclick=async()=>{
+    const st=el.querySelector('.status');st.textContent='Saving…';st.style.color='';
+    const body={address:$('a'+s.id).value,label:$('l'+s.id).value,cleaned:$('d'+s.id).value};
+    const r=await call(`/admin/${s.id}/${b.dataset.a}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).catch(()=>null);
+    if(r&&r.ok){st.textContent={approve:'Approved — on the map within a minute',reject:'Done',pending:'Moved back'}[b.dataset.a];st.style.color='var(--ok)';setTimeout(load,900)}
+    else{st.textContent='That didn’t save. Try again.';st.style.color='var(--bad)'}
+  });
+  return el;
+}
+$('lb').onclick=()=>$('lb').classList.remove('on');
+document.addEventListener('keydown',e=>{if(e.key==='Escape')$('lb').classList.remove('on')});
+start();
+</script>
+</body>
+</html>

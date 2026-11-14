@@ -79,6 +79,37 @@ select{width:100%;font:inherit;font-size:.92rem;padding:9px 10px;border:1px soli
 .contact h2{font:700 .95rem/1.2 "Hanken Grotesk",sans-serif;margin:0 0 4px}
 .contact p{margin:0;font-size:.86rem;line-height:1.45;color:var(--muted)}
 .contact a{color:var(--accent);font-weight:600}
+.contact .submit-btn[hidden]{display:none}
+.contact .submit-btn{margin-top:9px;width:100%;font:700 .9rem/1 "Hanken Grotesk",sans-serif;color:#fff;background:#C94A00;border:0;border-radius:8px;padding:11px 12px;cursor:pointer}
+.contact .submit-btn:hover{background:#A93E00}
+.submit-btn:focus-visible,.sf button:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+#submit{position:fixed;inset:0;z-index:60;background:rgba(29,28,26,.45);display:flex;align-items:center;justify-content:center;padding:16px}
+#submit[hidden]{display:none}
+.sf{position:relative;width:min(560px,100%);max-height:calc(100vh - 32px);overflow:auto;background:#fff;border-radius:12px;padding:24px 24px 20px;box-shadow:0 10px 40px rgba(0,0,0,.2)}
+.sf h2{font:800 1.25rem/1.2 "Hanken Grotesk",sans-serif;margin:0 0 4px}
+.sf .lede{color:var(--muted);font-size:.9rem;margin:0 0 16px;line-height:1.45}
+.sf label,.sf .lab{display:block;font-weight:700;font-size:.85rem;margin:14px 0 6px}
+.sf label small,.sf .lab small{font-weight:500;color:var(--muted)}
+.sf input[type=text],.sf input[type=email],.sf input[type=date],.sf textarea{width:100%;font:inherit;font-size:.95rem;padding:9px 11px;border:1px solid #CFCBC2;border-radius:8px;color:var(--ink);background:#fff}
+.sf textarea{min-height:64px;resize:vertical}
+.sf input:focus,.sf textarea:focus{outline:2px solid var(--accent);outline-offset:1px}
+#pickMap{height:240px;border-radius:8px;border:1px solid var(--line)}
+.sf .row{display:flex;gap:10px;align-items:center;margin-top:8px;flex-wrap:wrap}
+.sf .ghost{font:600 .85rem/1 "Hanken Grotesk",sans-serif;background:rgba(29,28,26,.07);border:0;border-radius:999px;padding:8px 12px;cursor:pointer;color:var(--ink)}
+.sf .hint{font-size:.8rem;color:var(--muted)}
+.sf .thumbs{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.sf .thumbs img{width:72px;height:72px;object-fit:cover;border-radius:6px}
+.sf .two{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+.sf .actions{display:flex;gap:10px;justify-content:flex-end;margin-top:18px;align-items:center}
+.sf .send{font:700 .95rem/1 "Hanken Grotesk",sans-serif;color:#fff;background:#C94A00;border:0;border-radius:8px;padding:12px 18px;cursor:pointer}
+.sf .send[disabled]{opacity:.6;cursor:progress}
+.sf .msg{font-size:.88rem;margin:12px 0 0;min-height:1em}
+.sf .msg.err{color:#A3260F}
+.sf .hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+.sf .x{position:absolute;top:10px;right:12px;background:none;border:0;font-size:1.7rem;line-height:1;cursor:pointer;color:var(--muted);padding:4px 8px}
+.sf .done{text-align:center;padding:20px 4px}
+.sf .done img{width:38px;margin-bottom:10px}
+@media (max-width:560px){.sf{padding:20px 16px 16px}.sf .two{grid-template-columns:1fr}#pickMap{height:200px}}
 footer{padding:10px 20px;border-top:1px solid var(--line);font-size:.78rem;color:var(--muted)}
 footer a{color:var(--accent)}
 @media (max-width:800px){
@@ -92,6 +123,9 @@ footer a{color:var(--accent)}
   footer{order:5;padding-bottom:84px}
   .contact{position:fixed;left:8px;right:8px;bottom:8px;width:auto;padding:10px 13px}
   .contact h2{display:none}
+  .contact{display:flex;gap:10px;align-items:center}
+  .contact p{flex:1;font-size:.8rem}
+  .contact .submit-btn{width:auto;margin:0;padding:10px 12px;white-space:nowrap}
   .event{padding:12px 16px 4px}.item{padding-left:30px}.item::before{left:16px}
   h1{font-size:1.3rem}.count b{font-size:2.5rem}
 }
@@ -119,6 +153,7 @@ footer a{color:var(--accent)}
   <section class="contact" aria-labelledby="contactTitle">
     <h2 id="contactTitle">Get involved</h2>
     <p>Want a cleanup on your block, or to join the next one? Contact Benjamin Barth at <a id="mail" href="#">benjaminrbarth&#64;gmail&#46;com</a>.</p>
+    <button hidden type="button" class="submit-btn" id="submitBtn" aria-controls="submit" aria-expanded="false">Cleaned a basin? Add it</button>
   </section>
   <div class="legend"><span><i style="background:#F85E00"></i>Matched to a city basin</span><span><i style="background:#8E8A82"></i>Approximate location</span></div>
 </div>
@@ -133,11 +168,41 @@ footer a{color:var(--accent)}
     <p class="about-src">Drain count: City of New Orleans catch basin map. Tap a number to try another split.</p>
   </div>
 </section>
+<section id="submit" role="dialog" aria-modal="true" aria-labelledby="submitTitle" hidden>
+  <form class="sf" id="sform" novalidate>
+    <button type="button" class="x" aria-label="Close">&times;</button>
+    <div id="sbody">
+    <h2 id="submitTitle">Add a basin you cleaned</h2>
+    <p class="lede">Drop a pin on the drain, add a photo, and send it in. It shows up on the map once it&rsquo;s reviewed.</p>
+    <span class="lab" id="pinLab">Where is it? <small>Tap the map on the drain, or use your location</small></span>
+    <div id="pickMap" role="application" aria-labelledby="pinLab"></div>
+    <div class="row"><button type="button" class="ghost" id="locBtn">Use my location</button><span class="hint" id="pinStatus">No pin yet</span></div>
+    <label for="sAddr">Address or nearest corner</label>
+    <input type="text" id="sAddr" name="address" maxlength="160" autocomplete="off" placeholder="e.g. 1200 Elmira Ave or Homer &amp; Elmira">
+    <div class="two">
+      <div><label for="sDate">Date cleaned</label><input type="date" id="sDate" name="cleaned" required></div>
+      <div><label for="sPhotos">Photos <small>up to 4</small></label><input type="file" id="sPhotos" accept="image/*" multiple></div>
+    </div>
+    <p class="hint">Before-and-after shots of the grate are perfect. Please leave people out of the photos.</p>
+    <div class="thumbs" id="thumbs"></div>
+    <div class="two">
+      <div><label for="sName">Your name <small>optional</small></label><input type="text" id="sName" name="name" maxlength="80" autocomplete="name"></div>
+      <div><label for="sEmail">Email <small>optional, not shown</small></label><input type="email" id="sEmail" name="email" maxlength="120" autocomplete="email"></div>
+    </div>
+    <label for="sNote">Anything else? <small>optional</small></label>
+    <textarea id="sNote" name="note" maxlength="600" placeholder="How clogged was it? Did it need a 311 call?"></textarea>
+    <div class="hp" aria-hidden="true"><label for="sWeb">Website</label><input type="text" id="sWeb" name="website" tabindex="-1" autocomplete="off"></div>
+    <p class="msg" id="sMsg" role="status" aria-live="polite"></p>
+    <div class="actions"><button type="submit" class="send" id="sSend">Send it in</button></div>
+    </div>
+  </form>
+</section>
 <script>
 mapboxgl.accessToken='pk.eyJ1IjoiYmJhcnRoMSIsImEiOiJjbW1saHk2cWkxeWxwMndvcGR3cmQ4Znk4In0.qKNF4Ef-mCIVsawr9YShUg';
 const fmt=d=>new Date(d+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
 const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 let basins=[],active=null,map,popup;
+const API=new URLSearchParams(location.search).get('api')||'https://api.grate.city';
 {const u='benjaminrbarth',d='gmail.com',a=document.getElementById('mail');a.href='mailto:'+u+'@'+d+'?subject=Grate%20City';}
 // About Grate City: drains left / (6 an hour) = person-hours, split into people x hours.
 const about=(()=>{
@@ -163,10 +228,13 @@ const map0=new mapboxgl.Map({container:'map',style:'mapbox://styles/mapbox/light
 map=map0;map.addControl(new mapboxgl.NavigationControl({showCompass:false}),'top-right');
 popup=new mapboxgl.Popup({offset:10,closeButton:false});
 
-fetch('basins.json?v=2026-11-13b').then(r=>r.json()).then(data=>{
+const approvedSubs=fetch(API+'/approved').then(r=>{if(!r.ok)return [];document.getElementById('submitBtn').hidden=false;return r.json()}).catch(()=>[]);
+const timeout=ms=>new Promise(r=>setTimeout(()=>r([]),ms));
+Promise.all([fetch('basins.json?v=2026-11-13b').then(r=>r.json()),Promise.race([approvedSubs,timeout(4000)])]).then(([data,subs])=>{
+  data=data.concat(Array.isArray(subs)?subs:[]);
   basins=data.map((b,i)=>({...b,i,key:b.d+'|'+b.n}));
   const events=[...new Map(basins.map(b=>[b.key,{key:b.key,d:b.d,n:b.n}])).values()].sort((a,b)=>b.d.localeCompare(a.d)||a.n.localeCompare(b.n));
-  const done=new Set(basins.map(b=>b.cid||b.a+b.lat)).size;
+  const done=new Set(basins.map(b=>b.cid||(b.sid?'s'+b.sid:b.a+b.lat))).size;
   document.getElementById('total').textContent=done;
   about.setDone(done);
   document.getElementById('events').textContent=events.length;
@@ -179,7 +247,7 @@ fetch('basins.json?v=2026-11-13b').then(r=>r.json()).then(data=>{
     map.addSource('basins',{type:'geojson',data:geo});
     map.addLayer({id:'basins',type:'circle',source:'basins',paint:{
       'circle-radius':['interpolate',['linear'],['zoom'],11,3,15,6,18,10],
-      'circle-color':['match',['get','p'],'city','#F85E00','#8E8A82'],
+      'circle-color':['match',['get','p'],'near','#8E8A82','#F85E00'],
       'circle-stroke-color':'#fff','circle-stroke-width':['interpolate',['linear'],['zoom'],11,.5,16,1.5],
       'circle-opacity':['case',['boolean',['feature-state','hide'],false],0.12,0.95]}});
     map.on('click','basins',e=>show(basins[e.features[0].properties.i],false));
@@ -192,8 +260,8 @@ fetch('basins.json?v=2026-11-13b').then(r=>r.json()).then(data=>{
 }).catch(()=>{document.getElementById('list').innerHTML='<p class="empty">The basin list couldn’t load. Try refreshing.</p>'});
 
 function show(b,fly){
-  const pics=b.ph&&b.ph.length?`<div class="pics${b.ph.length===1?' one':''}">${b.ph.map((f,i)=>`<img src="photos/${f}" alt="${i===0&&b.ph.length>1?'Before':'Catch basin'} at ${esc(b.a)}" loading="lazy" onclick="openLb(this.src)">`).join('')}</div>`:'';
-  popup.setLngLat([b.lon,b.lat]).setHTML(`<b>${esc(b.a)}</b><span class="m">${esc(b.n)} cleanup · ${fmt(b.d)}${b.p==='city'?'':'<br>Approximate location'}</span>${pics}`).addTo(map);
+  const pics=b.ph&&b.ph.length?`<div class="pics${b.ph.length===1?' one':''}">${b.ph.map((f,i)=>`<img src="${/^https?:/.test(f)?f:"photos/"+f}" alt="${i===0&&b.ph.length>1?'Before':'Catch basin'} at ${esc(b.a)}" loading="lazy" onclick="openLb(this.src)">`).join('')}</div>`:'';
+  popup.setLngLat([b.lon,b.lat]).setHTML(`<b>${esc(b.a)}</b><span class="m">${esc(b.n)}${b.p==='sub'?'':' cleanup'} · ${fmt(b.d)}${b.p==='near'?'<br>Approximate location':''}</span>${pics}`).addTo(map);
   if(fly)map.flyTo({center:[b.lon,b.lat],zoom:17});
 }
 function render(fit){
@@ -209,13 +277,84 @@ function render(fit){
     const sec=document.createElement('section');sec.className='event';
     sec.innerHTML=`<h2>${esc(e.n)}<small>${items.length} basin${items.length>1?'s':''}</small></h2><div class="date">${fmt(e.d)}</div>`;
     list.appendChild(sec);
-    items.forEach(b=>{const it=document.createElement('button');it.className='item'+(b.p==='city'?'':' approx');it.textContent=b.a;if(b.ph&&b.ph.length){const c=document.createElement('span');c.className='cam';c.textContent='photo';it.appendChild(c)}it.onclick=()=>show(b,true);list.appendChild(it)});
+    items.forEach(b=>{const it=document.createElement('button');it.className='item'+(b.p==='near'?' approx':'');it.textContent=b.a;if(b.ph&&b.ph.length){const c=document.createElement('span');c.className='cam';c.textContent='photo';it.appendChild(c)}it.onclick=()=>show(b,true);list.appendChild(it)});
   }
   if(fit&&vis.length){const bb=new mapboxgl.LngLatBounds();vis.forEach(b=>bb.extend([b.lon,b.lat]));map.fitBounds(bb,{padding:50,maxZoom:16,duration:fit===true&&map._fitted?600:0});map._fitted=true}
 }
 function openLb(src){const l=document.getElementById('lb');l.querySelector('img').src=src;l.classList.add('on')}
 document.getElementById('lb').onclick=()=>document.getElementById('lb').classList.remove('on');
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){document.getElementById('lb').classList.remove('on');about.close()}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){document.getElementById('lb').classList.remove('on');about.close();sub.close()}});
+
+// Submit a cleaned basin
+const sub=(()=>{
+  const el=id=>document.getElementById(id), box=el('submit'), btn=el('submitBtn'), form=el('sform');
+  let pm=null, marker=null, pin=null, files=[], last=null, sent=false;
+  const today=()=>{const d=new Date();return new Date(d-d.getTimezoneOffset()*6e4).toISOString().slice(0,10)};
+  const setPin=(lng,lat,fly)=>{
+    pin={lng,lat};
+    if(!marker){marker=new mapboxgl.Marker({color:'#C94A00',draggable:true}).setLngLat([lng,lat]).addTo(pm);marker.on('dragend',()=>{const p=marker.getLngLat();setPin(p.lng,p.lat,false)})}
+    else marker.setLngLat([lng,lat]);
+    if(fly)pm.flyTo({center:[lng,lat],zoom:18});
+    el('pinStatus').textContent='Pin set — drag it to adjust';
+    if(!el('sAddr').dataset.touched){
+      fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?types=address&limit=1&access_token=${mapboxgl.accessToken}`)
+        .then(r=>r.json()).then(j=>{const f=j.features&&j.features[0];if(f&&!el('sAddr').dataset.touched)el('sAddr').value=((f.address?f.address+' ':'')+f.text)}).catch(()=>{});
+    }
+  };
+  const open=()=>{
+    if(sent)reset();
+    box.hidden=false;btn.setAttribute('aria-expanded','true');last=document.activeElement;
+    if(!el('sDate').value){el('sDate').value=today();el('sDate').max=today()}
+    if(!pm){
+      pm=new mapboxgl.Map({container:'pickMap',style:'mapbox://styles/mapbox/streets-v12',center:map.getCenter(),zoom:Math.max(map.getZoom(),14),minZoom:10,maxBounds:[[-90.40,29.80],[-89.75,30.15]]});
+      pm.addControl(new mapboxgl.NavigationControl({showCompass:false}),'top-right');
+      pm.on('click',e=>setPin(e.lngLat.lng,e.lngLat.lat,false));
+    } else pm.resize();
+    box.querySelector('.x').focus();
+  };
+  const close=()=>{if(box.hidden)return;box.hidden=true;btn.setAttribute('aria-expanded','false');(last||btn).focus()};
+  const reset=()=>{location.reload()};
+  btn.onclick=open; box.querySelector('.x').onclick=close;
+  box.addEventListener('click',e=>{if(e.target===box)close()});
+  el('sAddr').addEventListener('input',()=>el('sAddr').dataset.touched=1);
+  el('locBtn').onclick=()=>{
+    if(!navigator.geolocation){el('pinStatus').textContent='Your browser can’t share location — tap the map instead';return}
+    el('pinStatus').textContent='Finding you…';
+    navigator.geolocation.getCurrentPosition(p=>setPin(p.coords.longitude,p.coords.latitude,true),()=>{el('pinStatus').textContent='Couldn’t get your location — tap the map instead'},{enableHighAccuracy:true,timeout:10000});
+  };
+  const shrink=f=>new Promise((res,rej)=>{
+    const img=new Image(),u=URL.createObjectURL(f);
+    img.onload=()=>{const k=Math.min(1,1600/Math.max(img.width,img.height)),c=document.createElement('canvas');c.width=Math.round(img.width*k);c.height=Math.round(img.height*k);
+      c.getContext('2d').drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(u);c.toBlob(b=>b?res(b):rej(),'image/jpeg',0.82)};
+    img.onerror=()=>{URL.revokeObjectURL(u);rej()};img.src=u;
+  });
+  el('sPhotos').onchange=async e=>{
+    const pick=[...e.target.files].slice(0,4);files=[];el('thumbs').innerHTML='';msg('');
+    for(const f of pick){try{const b=await shrink(f);files.push(b);const i=document.createElement('img');i.alt='Selected photo';i.src=URL.createObjectURL(b);el('thumbs').appendChild(i)}catch{msg('One of those photos couldn’t be read. Try a JPEG or PNG.',true)}}
+    if(e.target.files.length>4)msg('Only the first 4 photos will be sent.');
+  };
+  const msg=(t,err)=>{const m=el('sMsg');m.textContent=t;m.className='msg'+(err?' err':'')};
+  form.onsubmit=async e=>{
+    e.preventDefault();
+    if(!pin){msg('Tap the map to drop a pin on the drain first.',true);el('pickMap').scrollIntoView({block:'center'});return}
+    if(!el('sDate').value){msg('Pick the date you cleaned it.',true);return}
+    if(!files.length&&!confirm('Send without a photo? A photo helps it get approved.'))return;
+    const fd=new FormData();
+    fd.append('lat',pin.lat.toFixed(6));fd.append('lon',pin.lng.toFixed(6));
+    for(const k of ['address','cleaned','name','email','note','website'])fd.append(k,form.elements[k].value);
+    files.forEach((b,i)=>fd.append('photos',b,`photo${i+1}.jpg`));
+    const send=el('sSend');send.disabled=true;send.textContent='Sending…';msg('');
+    try{
+      const r=await fetch(API+'/submit',{method:'POST',body:fd});const j=await r.json().catch(()=>({}));
+      if(!r.ok)throw new Error(j.error||'Something went wrong. Please try again.');
+      sent=true;
+      el('sbody').innerHTML='<div class="done"><img src="logo.svg" alt=""><h2 id="submitTitle">Thanks — got it!</h2><p class="lede">Your basin will show up on the map once it&rsquo;s reviewed.</p><button type="button" class="send" id="sAgain">Add another</button></div>';
+      el('sAgain').onclick=reset;
+    }catch(err){msg(err.message==='Failed to fetch'?'Couldn’t reach the server. Check your connection and try again.':err.message,true)}
+    finally{if(!sent){send.disabled=false;send.textContent='Send it in'}}
+  };
+  return {open,close};
+})();
 </script>
 </body>
 </html>

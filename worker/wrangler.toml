@@ -1,0 +1,15 @@
+name = "grate-city-api"
+main = "src/index.js"
+compatibility_date = "2025-10-01"
+account_id = "225e04179dd068b4f60ea5a4f229c545"
+workers_dev = true
+
+routes = [
+  { pattern = "api.grate.city", custom_domain = true }
+]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "grate-city"
+database_id = "DATABASE_ID"  # filled in by the deploy workflow
+migrations_dir = "migrations"
