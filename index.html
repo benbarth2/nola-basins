@@ -10,7 +10,7 @@
 <script src="https://api.mapbox.com/mapbox-gl-js/v3.2.0/mapbox-gl.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{
   --ground:#E4E1DA; --surface:#FBFAF6; --ink:#1D1C1A; --muted:#6B675F; --line:#CFCBC2;
@@ -18,15 +18,15 @@
 }
 *{box-sizing:border-box}
 html,body{margin:0;height:100%}
-body{font-family:"IBM Plex Sans",system-ui,sans-serif;color:var(--ink);background:var(--ground);
+body{font-family:"Hanken Grotesk",system-ui,sans-serif;color:var(--ink);background:var(--ground);
   display:grid;grid-template-columns:380px 1fr;height:100vh;overflow:hidden}
 aside{display:flex;flex-direction:column;min-height:0;border-right:1px solid var(--line);background:var(--ground)}
 header{padding:22px 20px 16px;border-bottom:1px solid var(--line)}
-.kicker{font:600 .72rem/1 Archivo,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin:0 0 10px}
+.kicker{font:600 .72rem/1 "Hanken Grotesk",sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin:0 0 10px}
 .brand{display:flex;align-items:center;gap:10px;margin:0 0 16px}.brand img{display:block}.brand .wm{height:26px;width:auto}
-h1{font:800 1.5rem/1.15 Archivo,sans-serif;margin:0 0 14px;letter-spacing:-.01em}
+h1{font:800 1.5rem/1.15 "Hanken Grotesk",sans-serif;margin:0 0 14px;letter-spacing:-.01em}
 .count{display:flex;align-items:baseline;gap:10px}
-.count b{font:800 3rem/1 Archivo,sans-serif;color:var(--accent);font-variant-numeric:tabular-nums}
+.count b{font:800 3rem/1 "Hanken Grotesk",sans-serif;color:var(--accent);font-variant-numeric:tabular-nums}
 .count span{color:var(--muted);font-size:.95rem;line-height:1.3}
 .sub{margin:12px 0 0;color:var(--muted);font-size:.88rem;line-height:1.45}
 .controls{padding:14px 20px 12px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:10px}
@@ -36,8 +36,8 @@ input[type=search]:focus{outline:2px solid var(--accent);outline-offset:1px}
 select{width:100%;font:inherit;font-size:.92rem;padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink)}
 #list{flex:1;overflow-y:auto;padding:6px 0 24px}
 .event{padding:14px 20px 4px}
-.event h2{font:700 .95rem/1.2 Archivo,sans-serif;margin:0;display:flex;justify-content:space-between;gap:8px}
-.event h2 small{font:500 .8rem "IBM Plex Sans",sans-serif;color:var(--muted)}
+.event h2{font:700 .95rem/1.2 "Hanken Grotesk",sans-serif;margin:0;display:flex;justify-content:space-between;gap:8px}
+.event h2 small{font:500 .8rem "Hanken Grotesk",sans-serif;color:var(--muted)}
 .event .date{color:var(--muted);font-size:.8rem;margin:3px 0 6px}
 .item{display:block;width:100%;text-align:left;border:0;background:none;font:inherit;font-size:.9rem;color:var(--ink);
   padding:7px 20px 7px 34px;cursor:pointer;position:relative}
@@ -49,8 +49,8 @@ select{width:100%;font:inherit;font-size:.92rem;padding:9px 10px;border:1px soli
 .legend{position:absolute;left:12px;bottom:28px;background:rgba(251,250,246,.94);border:1px solid var(--line);
   border-radius:8px;padding:8px 11px;font-size:.78rem;color:var(--muted);display:flex;flex-direction:column;gap:4px;z-index:2}
 .legend i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:middle}
-.mapboxgl-popup-content{font-family:"IBM Plex Sans",sans-serif;font-size:.85rem;padding:10px 12px;border-radius:8px}
-.mapboxgl-popup-content b{display:block;font-family:Archivo,sans-serif;font-size:.92rem;margin-bottom:2px}
+.mapboxgl-popup-content{font-family:"Hanken Grotesk",sans-serif;font-size:.85rem;padding:10px 12px;border-radius:8px}
+.mapboxgl-popup-content b{display:block;font-family:"Hanken Grotesk",sans-serif;font-size:.92rem;margin-bottom:2px}
 .mapboxgl-popup-content .m{color:var(--muted)}
 .mapboxgl-popup{max-width:300px!important}
 .pics{display:flex;gap:6px;margin-top:8px}
@@ -60,6 +60,20 @@ select{width:100%;font:inherit;font-size:.92rem;padding:9px 10px;border:1px soli
 #lb{position:fixed;inset:0;z-index:50;background:rgba(10,12,12,.92);display:none;align-items:center;justify-content:center;padding:20px;cursor:zoom-out}
 #lb.on{display:flex}
 #lb img{max-width:100%;max-height:100%;border-radius:6px}
+.about-btn{margin-left:auto;font:600 .8rem/1 "Hanken Grotesk",sans-serif;color:var(--ink);background:rgba(29,28,26,.07);border:0;border-radius:999px;padding:8px 12px;cursor:pointer}
+.about-btn:hover{background:rgba(29,28,26,.13)}
+.about-btn:focus-visible,.num:focus-visible,.about-close:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+#about{position:fixed;inset:0;z-index:60;background:rgba(29,28,26,.45);display:flex;align-items:center;justify-content:center;padding:16px}
+#about[hidden]{display:none}
+.about-card{position:relative;width:min(620px,100%);max-height:calc(100vh - 32px);overflow:auto;background:#C94A00;color:#FFF;border-radius:10px;padding:34px 34px 26px;font:500 clamp(1.15rem,2.4vw,1.6rem)/1.3 "Hanken Grotesk",sans-serif}
+.about-card h2{display:flex;align-items:center;gap:10px;font:700 1rem/1 "Hanken Grotesk",sans-serif;letter-spacing:.02em;margin:0 0 22px}
+.about-card h2 img{filter:brightness(0) invert(1)}
+.about-card p{margin:0 0 18px}
+.about-card .num{font:inherit;color:inherit;background:rgba(255,255,255,.16);border:0;border-bottom:2px solid rgba(255,255,255,.6);border-radius:4px;padding:0 .2em;cursor:pointer;font-variant-numeric:tabular-nums}
+.about-card .num:hover{background:rgba(255,255,255,.28)}
+.about-src{font-size:.8rem;font-weight:400;opacity:.85;margin:24px 0 0!important}
+.about-close{position:absolute;top:10px;right:14px;background:none;border:0;color:#FFF;font-size:1.8rem;line-height:1;cursor:pointer;padding:4px 8px}
+@media (max-width:800px){.about-card{padding:28px 22px 22px}}
 footer{padding:10px 20px;border-top:1px solid var(--line);font-size:.78rem;color:var(--muted)}
 footer a{color:var(--accent)}
 @media (max-width:800px){
@@ -78,7 +92,7 @@ footer a{color:var(--accent)}
 <body>
 <aside>
   <header>
-    <div class="brand"><img src="logo.svg" alt="" width="30" height="32"><img src="wordmark.svg" alt="Grate City" class="wm" width="110" height="30"></div>
+    <div class="brand"><img src="logo.svg" alt="" width="30" height="32"><img src="wordmark.svg" alt="Grate City" class="wm" width="110" height="30"><button type="button" id="aboutBtn" class="about-btn" aria-controls="about" aria-expanded="false">About Grate City</button></div>
     <p class="kicker">New Orleans</p>
     <h1>Catch basins cleared by neighbors</h1>
     <div class="count"><b id="total">–</b><span>different catch basins cleared<br>across <span id="events">–</span> cleanups since November 2025</span></div>
@@ -95,11 +109,40 @@ footer a{color:var(--accent)}
   <div class="legend"><span><i style="background:#F85E00"></i>Matched to a city basin</span><span><i style="background:#8E8A82"></i>Approximate location</span></div>
 </div>
 <div id="lb" role="dialog" aria-label="Photo"><img alt=""></div>
+<section id="about" role="dialog" aria-modal="true" aria-labelledby="aboutTitle" hidden>
+  <div class="about-card">
+    <button type="button" class="about-close" aria-label="Close">&times;</button>
+    <h2 id="aboutTitle"><img src="logo.svg" alt="" width="26" height="28"> About Grate City</h2>
+    <p>New Orleans has <span id="aTotal">68,238</span> drains. Clogged grates flood streets and lead to potholes.</p>
+    <p>Grate City is a project to clear the grates. We&rsquo;ve cleared <span id="aDone">–</span> so far.</p>
+    <p>You can clear about 6 drains in an hour. We&rsquo;d be done if <button type="button" class="num" id="aPeople" aria-label="Pick a different number of people">–</button> people spent <button type="button" class="num" id="aHours" aria-label="Pick a different number of hours">–</button> <span id="aHoursWord">hours</span>.</p>
+    <p class="about-src">Drain count: City of New Orleans catch basin map. Tap a number to try another split.</p>
+  </div>
+</section>
 <script>
 mapboxgl.accessToken='pk.eyJ1IjoiYmJhcnRoMSIsImEiOiJjbW1saHk2cWkxeWxwMndvcGR3cmQ4Znk4In0.qKNF4Ef-mCIVsawr9YShUg';
 const fmt=d=>new Date(d+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
 const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 let basins=[],active=null,map,popup;
+// About Grate City: drains left / (6 an hour) = person-hours, split into people x hours.
+const about=(()=>{
+  const CITY_DRAINS=68238, PER_HOUR=6, el=id=>document.getElementById(id);
+  const box=el('about'),btn=el('aboutBtn'); let left=CITY_DRAINS, people=0, hours=0, timer=null, last=null;
+  const still=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const draw=()=>{el('aPeople').textContent=people.toLocaleString('en-US');el('aHours').textContent=hours.toLocaleString('en-US');el('aHoursWord').textContent=hours===1?'hour':'hours'};
+  const byHours=h=>{hours=h;people=Math.ceil(left/PER_HOUR/h);draw()};
+  const byPeople=n=>{people=n;hours=Math.max(1,Math.ceil(left/PER_HOUR/n));draw()};
+  const randHours=()=>{let h;do{h=1+Math.floor(Math.random()*20)}while(h===hours);byHours(h)};
+  const open=()=>{box.hidden=false;btn.setAttribute('aria-expanded','true');last=document.activeElement;box.querySelector('.about-close').focus();if(!still)timer=setInterval(randHours,5000)};
+  const close=()=>{if(box.hidden)return;box.hidden=true;btn.setAttribute('aria-expanded','false');clearInterval(timer);(last||btn).focus()};
+  btn.onclick=open; box.querySelector('.about-close').onclick=close;
+  box.addEventListener('click',e=>{if(e.target===box)close()});
+  el('aHours').onclick=()=>{clearInterval(timer);randHours()};
+  el('aPeople').onclick=()=>{clearInterval(timer);let n;do{n=50+Math.floor(Math.random()*950)}while(n===people);byPeople(n)};
+  el('aTotal').textContent=CITY_DRAINS.toLocaleString('en-US');
+  byHours(10);
+  return {open,close,setDone(n){el('aDone').textContent=n.toLocaleString('en-US');left=CITY_DRAINS-n;byHours(hours||10)}};
+})();
 
 const map0=new mapboxgl.Map({container:'map',style:'mapbox://styles/mapbox/light-v11',center:[-90.085,29.955],zoom:11.6,minZoom:10,maxBounds:[[-90.40,29.80],[-89.75,30.15]]});
 map=map0;map.addControl(new mapboxgl.NavigationControl({showCompass:false}),'top-right');
@@ -108,7 +151,9 @@ popup=new mapboxgl.Popup({offset:10,closeButton:false});
 fetch('basins.json?v=2026-11-11g').then(r=>r.json()).then(data=>{
   basins=data.map((b,i)=>({...b,i,key:b.d+'|'+b.n}));
   const events=[...new Map(basins.map(b=>[b.key,{key:b.key,d:b.d,n:b.n}])).values()].sort((a,b)=>b.d.localeCompare(a.d)||a.n.localeCompare(b.n));
-  document.getElementById('total').textContent=new Set(basins.map(b=>b.cid||b.a+b.lat)).size;
+  const done=new Set(basins.map(b=>b.cid||b.a+b.lat)).size;
+  document.getElementById('total').textContent=done;
+  about.setDone(done);
   document.getElementById('events').textContent=events.length;
   const ev=document.getElementById('ev');
   ev.innerHTML='<option value="">All cleanups</option>'+events.map(e=>`<option value="${esc(e.key)}">${esc(fmt(e.d))} · ${esc(e.n)}</option>`).join('');
@@ -155,7 +200,7 @@ function render(fit){
 }
 function openLb(src){const l=document.getElementById('lb');l.querySelector('img').src=src;l.classList.add('on')}
 document.getElementById('lb').onclick=()=>document.getElementById('lb').classList.remove('on');
-document.addEventListener('keydown',e=>{if(e.key==='Escape')document.getElementById('lb').classList.remove('on')});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){document.getElementById('lb').classList.remove('on');about.close()}});
 </script>
 </body>
 </html>
