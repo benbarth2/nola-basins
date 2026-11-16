@@ -57,6 +57,10 @@ select{width:100%;font:inherit;font-size:.92rem;padding:9px 10px;border:1px soli
 .pics{display:flex;gap:6px;margin-top:8px}
 .pics img{width:132px;height:132px;object-fit:cover;border-radius:6px;cursor:zoom-in;background:var(--line);display:block}
 .pics.one img{width:100%;height:170px}
+.pics.many{flex-wrap:wrap}.pics.many img{width:84px;height:84px}
+.mapboxgl-popup-content .m{display:block}
+.visits{margin:4px 0 0;padding-left:16px;font-size:.82rem;color:var(--muted)}
+.item .again{color:var(--accent);font-size:.75rem;margin-left:6px;font-weight:600}
 .item .cam{float:right;color:var(--muted);font-size:.75rem}
 #lb{position:fixed;inset:0;z-index:50;background:rgba(10,12,12,.92);display:none;align-items:center;justify-content:center;padding:20px;cursor:zoom-out}
 #lb.on{display:flex}
@@ -201,7 +205,7 @@ footer a{color:var(--accent)}
 mapboxgl.accessToken='pk.eyJ1IjoiYmJhcnRoMSIsImEiOiJjbW1saHk2cWkxeWxwMndvcGR3cmQ4Znk4In0.qKNF4Ef-mCIVsawr9YShUg';
 const fmt=d=>new Date(d+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
 const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-let basins=[],active=null,map,popup;
+let basins=[],groups=[],active=null,map,popup;
 const API=new URLSearchParams(location.search).get('api')||'https://api.grate.city';
 {const u='benjaminrbarth',d='gmail.com',a=document.getElementById('mail');a.href='mailto:'+u+'@'+d+'?subject=Grate%20City';}
 // About Grate City: drains left / (6 an hour) = person-hours, split into people x hours.
@@ -230,11 +234,14 @@ popup=new mapboxgl.Popup({offset:10,closeButton:false});
 
 const approvedSubs=fetch(API+'/approved').then(r=>{if(!r.ok)return [];document.getElementById('submitBtn').hidden=false;return r.json()}).catch(()=>[]);
 const timeout=ms=>new Promise(r=>setTimeout(()=>r([]),ms));
-Promise.all([fetch('basins.json?v=2026-11-13b').then(r=>r.json()),Promise.race([approvedSubs,timeout(4000)])]).then(([data,subs])=>{
+Promise.all([fetch('basins.json?v=2026-11-16a').then(r=>r.json()),Promise.race([approvedSubs,timeout(4000)])]).then(([data,subs])=>{
   data=data.concat(Array.isArray(subs)?subs:[]);
-  basins=data.map((b,i)=>({...b,i,key:b.d+'|'+b.n}));
+  basins=data.map((b,i)=>({...b,i,key:b.d+'|'+b.n,bk:b.cid||(b.sid?'s'+b.sid:b.a+'|'+b.lat)}));
+  // one dot per physical basin; a basin cleaned at several cleanups keeps every visit
+  const gm=new Map();basins.forEach(b=>{if(!gm.has(b.bk))gm.set(b.bk,[]);gm.get(b.bk).push(b)});
+  groups=[...gm.values()].map((v,gi)=>{v.sort((x,y)=>x.d.localeCompare(y.d));v.forEach(b=>b.g=gi);const c=v.find(b=>b.p==='city')||v[v.length-1];return{gi,visits:v,lat:c.lat,lon:c.lon,p:v.some(b=>b.p==='city')?'city':v.some(b=>b.p==='sub')?'sub':'near'}});
   const events=[...new Map(basins.map(b=>[b.key,{key:b.key,d:b.d,n:b.n}])).values()].sort((a,b)=>b.d.localeCompare(a.d)||a.n.localeCompare(b.n));
-  const done=new Set(basins.map(b=>b.cid||(b.sid?'s'+b.sid:b.a+b.lat))).size;
+  const done=groups.length;
   document.getElementById('total').textContent=done;
   about.setDone(done);
   document.getElementById('events').textContent=events.length;
@@ -242,7 +249,7 @@ Promise.all([fetch('basins.json?v=2026-11-13b').then(r=>r.json()),Promise.race([
   ev.innerHTML='<option value="">All cleanups</option>'+events.map(e=>`<option value="${esc(e.key)}">${esc(fmt(e.d))} · ${esc(e.n)}</option>`).join('');
   ev.onchange=()=>{active=ev.value||null;render(true)};
   window._events=events;
-  const geo={type:'FeatureCollection',features:basins.map(b=>({type:'Feature',id:b.i,properties:{i:b.i,p:b.p},geometry:{type:'Point',coordinates:[b.lon,b.lat]}}))};
+  const geo={type:'FeatureCollection',features:groups.map(g=>({type:'Feature',id:g.gi,properties:{g:g.gi,p:g.p,n:g.visits.length},geometry:{type:'Point',coordinates:[g.lon,g.lat]}}))};
   const add=()=>{
     map.addSource('basins',{type:'geojson',data:geo});
     map.addLayer({id:'basins',type:'circle',source:'basins',paint:{
@@ -250,7 +257,7 @@ Promise.all([fetch('basins.json?v=2026-11-13b').then(r=>r.json()),Promise.race([
       'circle-color':['match',['get','p'],'near','#8E8A82','#F85E00'],
       'circle-stroke-color':'#fff','circle-stroke-width':['interpolate',['linear'],['zoom'],11,.5,16,1.5],
       'circle-opacity':['case',['boolean',['feature-state','hide'],false],0.12,0.95]}});
-    map.on('click','basins',e=>show(basins[e.features[0].properties.i],false));
+    map.on('click','basins',e=>showGroup(groups[e.features[0].properties.g],false));
     map.on('mouseenter','basins',()=>map.getCanvas().style.cursor='pointer');
     map.on('mouseleave','basins',()=>map.getCanvas().style.cursor='');
     render(true);
@@ -259,16 +266,21 @@ Promise.all([fetch('basins.json?v=2026-11-13b').then(r=>r.json()),Promise.race([
   document.getElementById('q').addEventListener('input',()=>render(false));
 }).catch(()=>{document.getElementById('list').innerHTML='<p class="empty">The basin list couldn’t load. Try refreshing.</p>'});
 
-function show(b,fly){
-  const pics=b.ph&&b.ph.length?`<div class="pics${b.ph.length===1?' one':''}">${b.ph.map((f,i)=>`<img src="${/^https?:/.test(f)?f:"photos/"+f}" alt="${i===0&&b.ph.length>1?'Before':'Catch basin'} at ${esc(b.a)}" loading="lazy" onclick="openLb(this.src)">`).join('')}</div>`:'';
-  popup.setLngLat([b.lon,b.lat]).setHTML(`<b>${esc(b.a)}</b><span class="m">${esc(b.n)}${b.p==='sub'?'':' cleanup'} · ${fmt(b.d)}${b.p==='near'?'<br>Approximate location':''}</span>${pics}`).addTo(map);
-  if(fly)map.flyTo({center:[b.lon,b.lat],zoom:17});
+function show(b,fly){showGroup(groups[b.g],fly)}
+function showGroup(g,fly){
+  const v=g.visits,last=v[v.length-1],ph=v.flatMap(b=>b.ph||[]);
+  const src=f=>/^https?:/.test(f)?f:'photos/'+f;
+  const pics=ph.length?`<div class="pics${ph.length===1?' one':ph.length>2?' many':''}">${ph.map(f=>`<img src="${src(f)}" alt="Catch basin at ${esc(last.a)}" loading="lazy" onclick="openLb(this.src)">`).join('')}</div>`:'';
+  const lab=b=>`${esc(b.n)}${b.p==='sub'?'':' cleanup'} · ${fmt(b.d)}`;
+  const when=v.length>1?`<span class="m">Cleaned ${v.length} times</span><ul class="visits">${v.slice().reverse().map(b=>`<li>${lab(b)}</li>`).join('')}</ul>`:`<span class="m">${lab(last)}</span>`;
+  popup.setLngLat([g.lon,g.lat]).setHTML(`<b>${esc(last.a)}</b>${when}${g.p==='near'?'<span class="m">Approximate location</span>':''}${pics}`).addTo(map);
+  if(fly)map.flyTo({center:[g.lon,g.lat],zoom:17});
 }
 function render(fit){
   const q=document.getElementById('q').value.trim().toLowerCase();
   const vis=basins.filter(b=>(!active||b.key===active)&&(!q||b.a.toLowerCase().includes(q)));
   const on=new Set(vis.map(b=>b.i));
-  if(map.getSource('basins'))basins.forEach(b=>map.setFeatureState({source:'basins',id:b.i},{hide:!on.has(b.i)}));
+  if(map.getSource('basins'))groups.forEach(g=>map.setFeatureState({source:'basins',id:g.gi},{hide:!g.visits.some(b=>on.has(b.i))}));
   const list=document.getElementById('list');list.innerHTML='';
   if(!vis.length){list.innerHTML='<p class="empty">No basins match that search.</p>';return}
   for(const e of window._events||[]){
@@ -277,7 +289,7 @@ function render(fit){
     const sec=document.createElement('section');sec.className='event';
     sec.innerHTML=`<h2>${esc(e.n)}<small>${items.length} basin${items.length>1?'s':''}</small></h2><div class="date">${fmt(e.d)}</div>`;
     list.appendChild(sec);
-    items.forEach(b=>{const it=document.createElement('button');it.className='item'+(b.p==='near'?' approx':'');it.textContent=b.a;if(b.ph&&b.ph.length){const c=document.createElement('span');c.className='cam';c.textContent='photo';it.appendChild(c)}it.onclick=()=>show(b,true);list.appendChild(it)});
+    items.forEach(b=>{const it=document.createElement('button');it.className='item'+(b.p==='near'?' approx':'');it.textContent=b.a;if(groups[b.g].visits.length>1){const r=document.createElement('span');r.className='again';r.textContent='×'+groups[b.g].visits.length;r.title='Cleaned '+groups[b.g].visits.length+' times';it.appendChild(r)}if(groups[b.g].visits.some(x=>x.ph&&x.ph.length)){const c=document.createElement('span');c.className='cam';c.textContent='photo';it.appendChild(c)}it.onclick=()=>show(b,true);list.appendChild(it)});
   }
   if(fit&&vis.length){const bb=new mapboxgl.LngLatBounds();vis.forEach(b=>bb.extend([b.lon,b.lat]));map.fitBounds(bb,{padding:50,maxZoom:16,duration:fit===true&&map._fitted?600:0});map._fitted=true}
 }
