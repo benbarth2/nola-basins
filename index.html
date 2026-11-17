@@ -20,7 +20,7 @@
 html,body{margin:0;height:100%}
 body{font-family:"Hanken Grotesk",system-ui,sans-serif;color:var(--ink);background:var(--ground);
   display:grid;grid-template-columns:380px 1fr;height:100vh;overflow:hidden}
-aside{display:flex;flex-direction:column;min-height:0;border-right:1px solid var(--line);background:var(--ground)}
+aside{display:flex;flex-direction:column;min-height:0;overflow-y:auto;border-right:1px solid var(--line);background:var(--ground)}
 header{padding:22px 20px 16px;border-bottom:1px solid var(--line)}
 .kicker{font:600 .72rem/1 "Hanken Grotesk",sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin:0 0 10px}
 .brand{display:flex;align-items:center;gap:10px;margin:0 0 16px}.brand img{display:block}.brand .wm{height:26px;width:auto}
@@ -29,12 +29,12 @@ h1{font:800 1.5rem/1.15 "Hanken Grotesk",sans-serif;margin:0 0 14px;letter-spaci
 .count b{font:800 3rem/1 "Hanken Grotesk",sans-serif;color:var(--accent);font-variant-numeric:tabular-nums}
 .count span{color:var(--muted);font-size:.95rem;line-height:1.3}
 .sub{margin:12px 0 0;color:var(--muted);font-size:.88rem;line-height:1.45}
-.controls{padding:14px 20px 12px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:10px}
+.controls{padding:14px 20px 12px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:10px;position:sticky;top:0;z-index:2;background:var(--ground);border-top:1px solid var(--line)}
 input[type=search]{width:100%;font:inherit;font-size:.95rem;padding:10px 12px;border:1px solid var(--line);
   border-radius:8px;background:var(--surface);color:var(--ink)}
 input[type=search]:focus{outline:2px solid var(--accent);outline-offset:1px}
 select{width:100%;font:inherit;font-size:.92rem;padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink)}
-.scroll{flex:1;overflow-y:auto;min-height:0}
+.scroll{flex:1 0 auto}
 #list{padding:6px 0 18px}
 .event{padding:14px 20px 4px}
 .event h2{font:700 .95rem/1.2 "Hanken Grotesk",sans-serif;margin:0;display:flex;justify-content:space-between;gap:8px}
@@ -84,11 +84,14 @@ select{width:100%;font:inherit;font-size:.92rem;padding:9px 10px;border:1px soli
 .contact p{margin:0;font-size:.86rem;line-height:1.45;color:var(--muted)}
 .contact a{color:var(--accent);font-weight:600}
 .contact .submit-btn[hidden]{display:none}
-.contact .submit-btn{margin-top:9px;width:100%;font:700 .9rem/1 "Hanken Grotesk",sans-serif;color:#fff;background:#C94A00;border:0;border-radius:8px;padding:11px 12px;cursor:pointer}
+.cbtns{display:flex;flex-direction:column;gap:7px;margin-top:9px}
+.contact .submit-btn.alt{background:#fff;color:#A93E00;border:1.5px solid #E0B59B}
+.contact .submit-btn.alt:hover{background:#FBF1EA}
+.contact .submit-btn{width:100%;font:700 .9rem/1 "Hanken Grotesk",sans-serif;color:#fff;background:#C94A00;border:0;border-radius:8px;padding:11px 12px;cursor:pointer}
 .contact .submit-btn:hover{background:#A93E00}
 .submit-btn:focus-visible,.sf button:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
-#submit{position:fixed;inset:0;z-index:60;background:rgba(29,28,26,.45);display:flex;align-items:center;justify-content:center;padding:16px}
-#submit[hidden]{display:none}
+#request,#submit{position:fixed;inset:0;z-index:60;background:rgba(29,28,26,.45);display:flex;align-items:center;justify-content:center;padding:16px}
+#request[hidden],#submit[hidden]{display:none}
 .sf{position:relative;width:min(560px,100%);max-height:calc(100vh - 32px);overflow:auto;background:#fff;border-radius:12px;padding:24px 24px 20px;box-shadow:0 10px 40px rgba(0,0,0,.2)}
 .sf h2{font:800 1.25rem/1.2 "Hanken Grotesk",sans-serif;margin:0 0 4px}
 .sf .lede{color:var(--muted);font-size:.9rem;margin:0 0 16px;line-height:1.45}
@@ -109,6 +112,26 @@ select{width:100%;font:inherit;font-size:.92rem;padding:9px 10px;border:1px soli
 .sf .send[disabled]{opacity:.6;cursor:progress}
 .sf .msg{font-size:.88rem;margin:12px 0 0;min-height:1em}
 .sf .msg.err{color:#A3260F}
+.sf fieldset.radios{border:0;padding:0;margin:14px 0 0}
+.sf fieldset.radios legend{font-weight:700;font-size:.85rem;margin-bottom:6px;padding:0}
+.sf fieldset.radios label{display:inline-flex;align-items:center;gap:6px;font-weight:500;font-size:.92rem;margin:0 16px 4px 0}
+.sf input[type=tel],.sf input[type=number]{width:100%;font:inherit;font-size:.95rem;padding:9px 11px;border:1px solid #CFCBC2;border-radius:8px;color:var(--ink);background:#fff}
+.upcoming{padding:14px 20px 14px}
+.upcoming h2{font:800 .74rem/1 "Hanken Grotesk",sans-serif;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);margin:0 0 8px}
+.ev-card{border:1px solid var(--line);border-radius:10px;padding:11px 13px;margin-bottom:8px;background:#FFF8F3}
+.ev-card .t{font-weight:800;font-size:.98rem;line-height:1.25}
+.ev-card .w{font-size:.85rem;color:var(--ink);margin:3px 0 6px;font-weight:600}
+.ev-card .nt{font-size:.82rem;color:var(--muted);margin:0 0 6px}
+.ev-card ul{list-style:none;margin:0;padding:0}
+.ev-card li{font-size:.84rem;line-height:1.35;padding:5px 0;border-top:1px dashed #EBD9CC}
+.ev-card li b{display:block}
+.ev-card li button{all:unset;cursor:pointer;color:var(--ink)}
+.ev-card li button:hover b{text-decoration:underline}
+.ev-card li button:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.ev-card li a{color:var(--accent);font-weight:600;font-size:.8rem}
+.meet-pin{width:26px;height:26px;border-radius:50%;background:#1D1C1A;border:3px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;cursor:pointer}
+.meet-pin svg{width:13px;height:13px}
+.legend i.meet{background:#1D1C1A}
 .sf .hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
 .sf .x{position:absolute;top:10px;right:12px;background:none;border:0;font-size:1.7rem;line-height:1;cursor:pointer;color:var(--muted);padding:4px 8px}
 .sf .done{text-align:center;padding:20px 4px}
@@ -120,6 +143,8 @@ footer a{color:var(--accent)}
   body{grid-template-columns:1fr;grid-template-rows:auto 48vh minmax(0,1fr);height:auto;min-height:100vh;overflow:auto}
   aside{display:contents}
   header{order:1;padding:18px 16px 14px}
+  .upcoming{order:1;padding:12px 16px 4px}
+  .controls{position:static}
   #map{order:2;height:48vh}
   .controls{order:3;padding:12px 16px}
   #list{order:4;overflow:visible}
@@ -129,7 +154,8 @@ footer a{color:var(--accent)}
   .contact h2{display:none}
   .contact{display:flex;gap:10px;align-items:center}
   .contact p{flex:1;font-size:.8rem}
-  .contact .submit-btn{width:auto;margin:0;padding:10px 12px;white-space:nowrap}
+  .contact .cbtns{margin:0;gap:6px}
+  .contact .submit-btn{width:auto;margin:0;padding:9px 11px;white-space:nowrap;font-size:.82rem}
   .event{padding:12px 16px 4px}.item{padding-left:30px}.item::before{left:16px}
   h1{font-size:1.3rem}.count b{font-size:2.5rem}
 }
@@ -144,6 +170,10 @@ footer a{color:var(--accent)}
     <div class="count"><b id="total">–</b><span>different catch basins cleared<br>across <span id="events">–</span> cleanups since November 2025</span></div>
     <p class="sub">Clogged catch basins flood streets. These are the ones cleared so far, by neighbors working solo and with neighborhood associations and volunteers around the city.</p>
   </header>
+  <section class="upcoming" id="upcoming" aria-labelledby="upTitle" hidden>
+    <h2 id="upTitle">Upcoming cleanups</h2>
+    <div id="upList"></div>
+  </section>
   <div class="controls">
     <input type="search" id="q" placeholder="Search a street or address" aria-label="Search a street or address">
     <select id="ev" aria-label="Filter by cleanup"></select>
@@ -156,10 +186,13 @@ footer a{color:var(--accent)}
 <div id="map">
   <section class="contact" aria-labelledby="contactTitle">
     <h2 id="contactTitle">Get involved</h2>
-    <p>Want a cleanup on your block, or to join the next one? Contact Benjamin Barth at <a id="mail" href="#">benjaminrbarth&#64;gmail&#46;com</a>.</p>
-    <button hidden type="button" class="submit-btn" id="submitBtn" aria-controls="submit" aria-expanded="false">Cleaned a basin? Add it</button>
+    <p>Want a cleanup on your block? Request one, or contact Benjamin Barth at <a id="mail" href="#">benjaminrbarth&#64;gmail&#46;com</a>.</p>
+    <div class="cbtns">
+      <button hidden type="button" class="submit-btn" id="requestBtn" aria-controls="request" aria-expanded="false">Request a cleanup</button>
+      <button hidden type="button" class="submit-btn alt" id="submitBtn" aria-controls="submit" aria-expanded="false">Cleaned a basin? Add it</button>
+    </div>
   </section>
-  <div class="legend"><span><i style="background:#F85E00"></i>Matched to a city basin</span><span><i style="background:#8E8A82"></i>Approximate location</span></div>
+  <div class="legend"><span><i style="background:#F85E00"></i>Matched to a city basin</span><span><i style="background:#8E8A82"></i>Approximate location</span><span id="legMeet" hidden><i class="meet"></i>Upcoming cleanup meeting spot</span></div>
 </div>
 <div id="lb" role="dialog" aria-label="Photo"><img alt=""></div>
 <section id="about" role="dialog" aria-modal="true" aria-labelledby="aboutTitle" hidden>
@@ -171,6 +204,37 @@ footer a{color:var(--accent)}
     <p>You can clear about 6 drains in an hour. We&rsquo;d be done if <button type="button" class="num" id="aPeople" aria-label="Pick a different number of people">–</button> people spent <button type="button" class="num" id="aHours" aria-label="Pick a different number of hours">–</button> <span id="aHoursWord">hours</span>.</p>
     <p class="about-src">Drain count: City of New Orleans catch basin map. Tap a number to try another split.</p>
   </div>
+</section>
+<section id="request" class="dlg" role="dialog" aria-modal="true" aria-labelledby="reqTitle" hidden>
+  <form class="sf" id="rform" novalidate>
+    <button type="button" class="x" aria-label="Close">&times;</button>
+    <div id="rbody">
+    <h2 id="reqTitle">Request a cleanup</h2>
+    <p class="lede">Tell us where to meet and how to reach you. We&rsquo;ll get in touch to pick a date.</p>
+    <label for="rAddr">Where should we meet? <small>an address or corner</small></label>
+    <input type="text" id="rAddr" name="address" maxlength="200" autocomplete="street-address" required placeholder="e.g. 2400 Napoleon Ave, or Freret &amp; Napoleon">
+    <div class="row"><button type="button" class="ghost" id="rLoc">Use my location</button><span class="hint" id="rLocStatus"></span></div>
+    <label for="rName">Your name <small>optional</small></label>
+    <input type="text" id="rName" name="name" maxlength="80" autocomplete="name">
+    <div class="two">
+      <div><label for="rEmail">Email</label><input type="email" id="rEmail" name="email" maxlength="120" autocomplete="email"></div>
+      <div><label for="rPhone">Phone</label><input type="tel" id="rPhone" name="phone" maxlength="40" autocomplete="tel"></div>
+    </div>
+    <p class="hint">Add an email or a phone number (or both). Neither is shown publicly.</p>
+    <fieldset class="radios">
+      <legend>Will people from your block come out and clean with us?</legend>
+      <label><input type="radio" name="helpers" value="yes"> Yes</label>
+      <label><input type="radio" name="helpers" value="not-sure" checked> Not sure yet</label>
+      <label><input type="radio" name="helpers" value="no"> No, just me</label>
+    </fieldset>
+    <div id="rCountWrap" hidden><label for="rCount">About how many people?</label><input type="number" id="rCount" name="helpers_count" min="1" max="500" inputmode="numeric" style="max-width:140px"></div>
+    <label for="rNote">Anything else? <small>optional</small></label>
+    <textarea id="rNote" name="note" maxlength="800" placeholder="Which streets flood? Days or times that work?"></textarea>
+    <div class="hp" aria-hidden="true"><label for="rWeb">Website</label><input type="text" id="rWeb" name="website" tabindex="-1" autocomplete="off"></div>
+    <p class="msg" id="rMsg" role="status" aria-live="polite"></p>
+    <div class="actions"><button type="submit" class="send" id="rSend">Send request</button></div>
+    </div>
+  </form>
 </section>
 <section id="submit" role="dialog" aria-modal="true" aria-labelledby="submitTitle" hidden>
   <form class="sf" id="sform" novalidate>
@@ -232,7 +296,7 @@ const map0=new mapboxgl.Map({container:'map',style:'mapbox://styles/mapbox/light
 map=map0;map.addControl(new mapboxgl.NavigationControl({showCompass:false}),'top-right');
 popup=new mapboxgl.Popup({offset:10,closeButton:false});
 
-const approvedSubs=fetch(API+'/approved').then(r=>{if(!r.ok)return [];document.getElementById('submitBtn').hidden=false;return r.json()}).catch(()=>[]);
+const approvedSubs=fetch(API+'/approved').then(r=>{if(!r.ok)return [];document.getElementById('submitBtn').hidden=false;document.getElementById('requestBtn').hidden=false;return r.json()}).catch(()=>[]);
 const timeout=ms=>new Promise(r=>setTimeout(()=>r([]),ms));
 Promise.all([fetch('basins.json?v=2026-11-16a').then(r=>r.json()),Promise.race([approvedSubs,timeout(4000)])]).then(([data,subs])=>{
   data=data.concat(Array.isArray(subs)?subs:[]);
@@ -295,7 +359,7 @@ function render(fit){
 }
 function openLb(src){const l=document.getElementById('lb');l.querySelector('img').src=src;l.classList.add('on')}
 document.getElementById('lb').onclick=()=>document.getElementById('lb').classList.remove('on');
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){document.getElementById('lb').classList.remove('on');about.close();sub.close()}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){document.getElementById('lb').classList.remove('on');about.close();sub.close();req.close()}});
 
 // Submit a cleaned basin
 const sub=(()=>{
@@ -364,6 +428,79 @@ const sub=(()=>{
       el('sAgain').onclick=reset;
     }catch(err){msg(err.message==='Failed to fetch'?'Couldn’t reach the server. Check your connection and try again.':err.message,true)}
     finally{if(!sent){send.disabled=false;send.textContent='Send it in'}}
+  };
+  return {open,close};
+})();
+
+// Upcoming cleanups (managed on admin.html)
+const evFmt=d=>new Date(d+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+const tFmt=t=>{if(!t)return'';let[h,m]=t.split(':').map(Number);const ap=h>=12?'pm':'am';h=h%12||12;return h+(m?':'+String(m).padStart(2,'0'):'')+' '+ap};
+fetch(API+'/events').then(r=>r.ok?r.json():[]).then(evs=>{
+  if(!Array.isArray(evs)||!evs.length)return;
+  const box=document.getElementById('upList');
+  const pinSvg='<svg viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><path d="M5 3h2v18H5zM8 4h11l-2.5 4L19 12H8z"/></svg>';
+  const pins=[];
+  evs.forEach(e=>{
+    const when=evFmt(e.date)+(e.start?', '+tFmt(e.start)+(e.end?'–'+tFmt(e.end):''):'');
+    const card=document.createElement('div');card.className='ev-card';
+    card.innerHTML=`<div class="t">${esc(e.title)}</div><div class="w">${esc(when)}</div>${e.note?`<p class="nt">${esc(e.note)}</p>`:''}<ul></ul>`;
+    const ul=card.querySelector('ul');
+    (e.locations||[]).forEach(l=>{
+      const li=document.createElement('li');const q=encodeURIComponent((l.place?l.place+', ':'')+l.address+', New Orleans, LA');
+      const has=Number.isFinite(l.lat)&&Number.isFinite(l.lon);
+      li.innerHTML=`<button type="button"${has?'':' disabled'}><b>${esc(l.name||l.place)}</b>${esc(l.place&&l.name?l.place+' · ':'')}${esc(l.address)}</button> <a href="https://www.google.com/maps/search/?api=1&query=${q}" target="_blank" rel="noopener">Directions</a>`;
+      ul.appendChild(li);
+      if(has){
+        const html=`<b>${esc(l.name?l.name+' meetup':e.title)}</b><span class="m">${esc(e.title)}</span><span class="m">${esc(when)}</span><span class="m">Meet at ${esc(l.place?l.place+', ':'')}${esc(l.address)}</span>`;
+        pins.push({l,html});
+        li.querySelector('button').onclick=()=>{popup.setLngLat([l.lon,l.lat]).setHTML(html).addTo(map);map.flyTo({center:[l.lon,l.lat],zoom:15})};
+      }
+    });
+    box.appendChild(card);
+  });
+  document.getElementById('upcoming').hidden=false;
+  const addPins=()=>{pins.forEach(({l,html})=>{const el=document.createElement('div');el.className='meet-pin';el.innerHTML=pinSvg;el.setAttribute('role','button');el.setAttribute('aria-label','Meeting spot: '+(l.place||l.address));el.tabIndex=0;
+    const open=ev=>{ev&&ev.stopPropagation();popup.setLngLat([l.lon,l.lat]).setHTML(html).addTo(map)};el.addEventListener('click',open);el.addEventListener('keydown',ev=>{if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();open()}});
+    new mapboxgl.Marker({element:el}).setLngLat([l.lon,l.lat]).addTo(map)});
+    if(pins.length)document.getElementById('legMeet').hidden=false};
+  const wait=()=>map?addPins():setTimeout(wait,200);wait();
+}).catch(()=>{});
+
+// Request a cleanup
+const req=(()=>{
+  const el=id=>document.getElementById(id), box=el('request'), btn=el('requestBtn'), form=el('rform');
+  let last=null, pos=null, sent=false;
+  const open=()=>{box.hidden=false;btn.setAttribute('aria-expanded','true');last=document.activeElement;el('rAddr').focus()};
+  const close=()=>{if(box.hidden)return;box.hidden=true;btn.setAttribute('aria-expanded','false');(last||btn).focus()};
+  btn.onclick=()=>{if(sent)location.reload();else open()};
+  box.querySelector('.x').onclick=close;box.addEventListener('click',e=>{if(e.target===box)close()});
+  form.querySelectorAll('input[name=helpers]').forEach(r=>r.onchange=()=>{el('rCountWrap').hidden=form.elements.helpers.value!=='yes'});
+  el('rLoc').onclick=()=>{
+    if(!navigator.geolocation){el('rLocStatus').textContent='Your browser can’t share location';return}
+    el('rLocStatus').textContent='Finding you…';
+    navigator.geolocation.getCurrentPosition(p=>{pos={lat:p.coords.latitude,lon:p.coords.longitude};
+      fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${pos.lon},${pos.lat}.json?types=address&limit=1&access_token=${mapboxgl.accessToken}`).then(r=>r.json()).then(j=>{const f=j.features&&j.features[0];if(f)el('rAddr').value=(f.address?f.address+' ':'')+f.text;el('rLocStatus').textContent='Got it — edit the address if needed'}).catch(()=>{el('rLocStatus').textContent='Got your location'})},
+      ()=>{el('rLocStatus').textContent='Couldn’t get your location — type the address instead'},{enableHighAccuracy:true,timeout:10000});
+  };
+  el('rAddr').addEventListener('input',()=>{pos=null});
+  const msg=(t,err)=>{const m=el('rMsg');m.textContent=t;m.className='msg'+(err?' err':'')};
+  form.onsubmit=async e=>{
+    e.preventDefault();
+    const f=form.elements;
+    if(f.address.value.trim().length<4){msg('Add an address or corner to meet at.',true);el('rAddr').focus();return}
+    if(!f.email.value.trim()&&!f.phone.value.trim()){msg('Add an email or phone number so we can reach you.',true);el('rEmail').focus();return}
+    if(f.email.value.trim()&&!el('rEmail').checkValidity()){msg('That email doesn’t look right.',true);el('rEmail').focus();return}
+    const body={address:f.address.value,name:f.name.value,email:f.email.value,phone:f.phone.value,helpers:f.helpers.value,helpers_count:f.helpers_count.value,note:f.note.value,website:f.website.value};
+    const send=el('rSend');send.disabled=true;send.textContent='Sending…';msg('');
+    try{
+      if(!pos){try{const j=await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(body.address+', New Orleans, LA')}.json?proximity=-90.08,29.95&limit=1&access_token=${mapboxgl.accessToken}`).then(r=>r.json());const c=j.features&&j.features[0]&&j.features[0].center;if(c)pos={lon:c[0],lat:c[1]}}catch{}}
+      if(pos){body.lat=pos.lat;body.lon=pos.lon}
+      const r=await fetch(API+'/request',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const j=await r.json().catch(()=>({}));
+      if(!r.ok)throw new Error(j.error||'Something went wrong. Please try again.');
+      sent=true;
+      el('rbody').innerHTML='<div class="done"><img src="logo.svg" alt=""><h2 id="reqTitle">Thanks — request sent!</h2><p class="lede">We&rsquo;ll reach out to set up a cleanup on your block.</p></div>';
+    }catch(err){msg(err.message==='Failed to fetch'?'Couldn’t reach the server. Check your connection and try again.':err.message,true)}
+    finally{if(!sent){send.disabled=false;send.textContent='Send request'}}
   };
   return {open,close};
 })();

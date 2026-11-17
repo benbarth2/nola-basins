@@ -44,6 +44,24 @@ button:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
 .fields label{font-size:.78rem;font-weight:700;display:block;margin-bottom:4px}
 .acts{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .status{font-size:.85rem;font-weight:600}
+.sections{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.sections button{font-weight:700;border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 14px;cursor:pointer;color:var(--muted)}
+.sections button[aria-current=page]{background:var(--ink);color:#fff;border-color:var(--ink)}
+.sections button[aria-current=page] .n{background:rgba(255,255,255,.2)}
+.evhead{display:flex;gap:12px;align-items:center;justify-content:space-between;margin:4px 0 14px;flex-wrap:wrap}
+.evform{grid-template-columns:1fr!important}
+.locrow{display:grid;grid-template-columns:1fr 1.5fr 1.5fr auto;gap:8px;margin-bottom:8px;align-items:end}
+.locrow label{font-size:.72rem;font-weight:700;display:block;margin-bottom:3px}
+.locrow .geo{font-size:.72rem;color:var(--muted);grid-column:1/-1;margin-top:-4px}
+input[type=time]{width:100%;font:inherit;font-size:.95rem;padding:9px 11px;border:1px solid #CFCBC2;border-radius:8px;color:var(--ink)}
+.req{border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:12px}
+.req h3{margin:0 0 4px;font-size:1.05rem}
+.req .pill{display:inline-block;font-size:.75rem;font-weight:700;border-radius:999px;padding:2px 8px;background:var(--soft);margin-left:6px}
+.req .pill.yes{background:#E3F0E0;color:var(--ok)}
+.evrow{border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin-bottom:10px;display:flex;gap:12px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
+.evrow.past{opacity:.6}
+.evrow ul{margin:6px 0 0;padding-left:18px;font-size:.88rem}
+@media (max-width:720px){.locrow{grid-template-columns:1fr}}
 .empty{color:var(--muted);padding:30px 0;text-align:center}
 #lb{position:fixed;inset:0;background:rgba(10,12,12,.92);display:none;align-items:center;justify-content:center;padding:20px;cursor:zoom-out;z-index:9}
 #lb.on{display:flex}#lb img{max-width:100%;max-height:100%;border-radius:6px}
@@ -64,6 +82,12 @@ button:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
   </form>
 
   <div id="app" hidden>
+    <nav class="sections" aria-label="Admin sections">
+      <button data-sec="subs" aria-current="page">Basin submissions <span class="n" id="n-subs">0</span></button>
+      <button data-sec="reqs">Cleanup requests <span class="n" id="n-reqs">0</span></button>
+      <button data-sec="evts">Events</button>
+    </nav>
+    <div id="sec-subs">
     <div class="tabs" role="tablist">
       <button role="tab" data-s="pending" aria-selected="true">Waiting <span class="n" id="n-pending">0</span></button>
       <button role="tab" data-s="approved" aria-selected="false">Approved <span class="n" id="n-approved">0</span></button>
@@ -71,6 +95,35 @@ button:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
       <button class="ghost" id="logout" style="margin-left:auto;padding:6px 10px;font-size:.85rem">Sign out</button>
     </div>
     <div id="items" aria-live="polite"></div>
+    </div>
+    <div id="sec-reqs" hidden>
+      <div class="tabs" role="tablist">
+        <button role="tab" data-r="new" aria-selected="true">New <span class="n" id="n-new">0</span></button>
+        <button role="tab" data-r="handled" aria-selected="false">Handled <span class="n" id="n-handled">0</span></button>
+      </div>
+      <div id="reqItems" aria-live="polite"></div>
+    </div>
+    <div id="sec-evts" hidden>
+      <div class="evhead"><p class="meta" style="margin:0">Events dated today or later show on the map under &ldquo;Upcoming cleanups.&rdquo; Past ones drop off on their own.</p><button class="primary" id="newEv">Add an event</button></div>
+      <form id="evForm" class="card evform" hidden>
+        <div>
+          <h3 id="evFormTitle" style="margin:0 0 10px">New event</h3>
+          <div class="fields" style="grid-template-columns:2fr 1fr 1fr 1fr">
+            <div><label for="eTitle">Title</label><input type="text" id="eTitle" required maxlength="120"></div>
+            <div><label for="eDate">Date</label><input type="date" id="eDate" required></div>
+            <div><label for="eStart">Starts</label><input type="time" id="eStart"></div>
+            <div><label for="eEnd">Ends</label><input type="time" id="eEnd"></div>
+          </div>
+          <label for="eNote" style="font-size:.78rem;font-weight:700;display:block;margin-bottom:4px">Note <span class="meta">optional</span></label>
+          <input type="text" id="eNote" maxlength="600" style="margin-bottom:12px">
+          <div style="font-size:.78rem;font-weight:700;margin-bottom:6px">Meeting spots</div>
+          <div id="eLocs"></div>
+          <button type="button" class="ghost" id="addLoc" style="margin:4px 0 14px">+ Add a meeting spot</button>
+          <div class="acts"><button class="primary" type="submit">Save event</button><button class="ghost" type="button" id="cancelEv">Cancel</button><span class="status" id="evStatus" role="status"></span></div>
+        </div>
+      </form>
+      <div id="evItems" aria-live="polite"></div>
+    </div>
   </div>
 </div>
 <div id="lb" role="dialog" aria-label="Photo"><img alt=""></div>
@@ -87,7 +140,7 @@ async function start(){
   if(!key){$('login').hidden=false;$('app').hidden=true;$('key').focus();return}
   const r=await call('/admin/check').catch(()=>null);
   if(!r||!r.ok){$('loginErr').textContent=r&&r.status===401?'That key didn’t work.':'Couldn’t reach the submissions service.';try{localStorage.removeItem('gc-admin')}catch{};key='';$('login').hidden=false;$('app').hidden=true;return}
-  $('login').hidden=true;$('app').hidden=false;load();
+  $('login').hidden=true;$('app').hidden=false;load();counts();
 }
 $('login').onsubmit=e=>{e.preventDefault();key=$('key').value.trim();try{localStorage.setItem('gc-admin',key)}catch{};$('loginErr').textContent='';start()};
 $('logout').onclick=()=>{try{localStorage.removeItem('gc-admin')}catch{};key='';$('key').value='';start()};
@@ -139,6 +192,96 @@ function card(s){
 }
 $('lb').onclick=()=>$('lb').classList.remove('on');
 document.addEventListener('keydown',e=>{if(e.key==='Escape')$('lb').classList.remove('on')});
+
+// ----- sections -----
+let sec='subs';
+document.querySelectorAll('.sections button').forEach(b=>b.onclick=()=>{sec=b.dataset.sec;document.querySelectorAll('.sections button').forEach(x=>x===b?x.setAttribute('aria-current','page'):x.removeAttribute('aria-current'));
+  for(const k of ['subs','reqs','evts'])$('sec-'+k).hidden=k!==sec;
+  if(sec==='subs')load();if(sec==='reqs')loadReqs();if(sec==='evts')loadEvents()});
+async function counts(){
+  try{const a=await call('/admin/list?status=pending').then(r=>r.json());$('n-subs').textContent=a.counts.pending||0}catch{}
+  try{const b=await call('/admin/requests?status=new').then(r=>r.json());$('n-reqs').textContent=b.counts.new||0}catch{}
+}
+
+// ----- requests -----
+let rtab='new';
+document.querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>{rtab=b.dataset.r;document.querySelectorAll('[data-r]').forEach(x=>x.setAttribute('aria-selected',x===b));loadReqs()});
+async function loadReqs(){
+  $('reqItems').innerHTML='<p class="empty">Loading…</p>';
+  const r=await call('/admin/requests?status='+rtab);if(!r.ok){$('reqItems').innerHTML='<p class="empty">Couldn’t load requests.</p>';return}
+  const j=await r.json();$('n-new').textContent=j.counts.new||0;$('n-handled').textContent=j.counts.handled||0;$('n-reqs').textContent=j.counts.new||0;
+  if(!j.items.length){$('reqItems').innerHTML=`<p class="empty">${rtab==='new'?'No new requests.':'None yet.'}</p>`;return}
+  $('reqItems').innerHTML='';
+  const H={yes:'Neighbors will help',no:'Just them','not-sure':'Not sure about helpers'};
+  for(const q of j.items){
+    const el=document.createElement('article');el.className='req';
+    const maps=q.lat!=null?`https://www.google.com/maps/search/?api=1&query=${q.lat},${q.lon}`:`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q.address+', New Orleans, LA')}`;
+    el.innerHTML=`<h3><a href="${maps}" target="_blank" rel="noopener">${esc(q.address)}</a><span class="pill${q.helpers==='yes'?' yes':''}">${H[q.helpers]||''}${q.helpers==='yes'&&q.helpers_count?' · about '+q.helpers_count:''}</span></h3>
+      <p class="meta">#${q.id} · ${esc(q.created)} UTC${q.name?' · <b>'+esc(q.name)+'</b>':''}${q.email?' · <a href="mailto:'+esc(q.email)+'?subject=Your%20Grate%20City%20cleanup%20request">'+esc(q.email)+'</a>':''}${q.phone?' · <a href="tel:'+esc(q.phone)+'">'+esc(q.phone)+'</a>':''}</p>
+      ${q.note?`<p class="note">${esc(q.note)}</p>`:''}
+      <div class="acts">${q.status==='new'?'<button class="primary" data-s="handled">Mark handled</button>':'<button class="ghost" data-s="new">Move back to new</button>'}<span class="status" role="status"></span></div>`;
+    el.querySelector('[data-s]').onclick=async e=>{const st=el.querySelector('.status');const r=await call(`/admin/requests/${q.id}/${e.target.dataset.s}`,{method:'POST'}).catch(()=>null);if(r&&r.ok){st.textContent='Done';setTimeout(loadReqs,500)}else st.textContent='Didn’t save'};
+    $('reqItems').appendChild(el);
+  }
+}
+
+// ----- events -----
+let editing=null;
+const todayStr=()=>{const d=new Date();return new Date(d-d.getTimezoneOffset()*6e4).toISOString().slice(0,10)};
+async function loadEvents(){
+  $('evItems').innerHTML='<p class="empty">Loading…</p>';
+  const r=await call('/admin/events');if(!r.ok){$('evItems').innerHTML='<p class="empty">Couldn’t load events.</p>';return}
+  const evs=await r.json();
+  if(!evs.length){$('evItems').innerHTML='<p class="empty">No events yet.</p>';return}
+  $('evItems').innerHTML='';
+  for(const e of evs){
+    const el=document.createElement('article');el.className='evrow'+(e.date<todayStr()?' past':'');
+    el.innerHTML=`<div><b>${esc(e.title)}</b><div class="meta" style="margin:2px 0 0">${esc(e.date)}${e.start?' · '+esc(e.start)+(e.end?'–'+esc(e.end):''):''}${e.date<todayStr()?' · past':''}</div>
+      <ul>${e.locations.map(l=>`<li>${esc(l.name)}${l.name?': ':''}${esc(l.place)}${l.place?', ':''}${esc(l.address)}${l.lat==null?' <span style="color:var(--bad)">(not on map)</span>':''}</li>`).join('')}</ul></div>
+      <div class="acts"><button class="ghost" data-a="edit">Edit</button><button class="reject" data-a="del">Delete</button></div>`;
+    el.querySelector('[data-a=edit]').onclick=()=>openForm(e);
+    el.querySelector('[data-a=del]').onclick=async b=>{if(b.target.dataset.sure!=='1'){b.target.dataset.sure='1';b.target.textContent='Click again to delete';return}
+      await call(`/admin/events/${e.id}/delete`,{method:'POST'});loadEvents()};
+    $('evItems').appendChild(el);
+  }
+}
+function locRow(l={}){
+  const d=document.createElement('div');d.className='locrow';
+  d.innerHTML=`<div><label>Name</label><input type="text" class="ln" maxlength="80" placeholder="Broadmoor" value="${esc(l.name||'')}"></div>
+    <div><label>Meeting place</label><input type="text" class="lp" maxlength="120" placeholder="Rosa F. Keller Library" value="${esc(l.place||'')}"></div>
+    <div><label>Address</label><input type="text" class="la" maxlength="160" placeholder="4300 S Broad St" value="${esc(l.address||'')}"></div>
+    <button type="button" class="reject" aria-label="Remove this meeting spot" style="padding:9px 12px">✕</button>
+    <div class="geo">${l.lat!=null?'On the map':'Will be placed on the map from the address when you save'}</div>`;
+  d.dataset.lat=l.lat??'';d.dataset.lon=l.lon??'';d.dataset.addr=l.address||'';
+  d.querySelector('button').onclick=()=>d.remove();
+  return d;
+}
+function openForm(e){
+  editing=e?e.id:null;$('evFormTitle').textContent=e?'Edit event':'New event';
+  $('eTitle').value=e?e.title:'';$('eDate').value=e?e.date:'';$('eStart').value=e?.start||'';$('eEnd').value=e?.end||'';$('eNote').value=e?.note||'';
+  $('eLocs').innerHTML='';(e?e.locations:[{}]).forEach(l=>$('eLocs').appendChild(locRow(l)));
+  $('evStatus').textContent='';$('evForm').hidden=false;$('eTitle').focus();
+}
+$('newEv').onclick=()=>openForm(null);
+$('cancelEv').onclick=()=>{$('evForm').hidden=true};
+$('addLoc').onclick=()=>$('eLocs').appendChild(locRow());
+$('evForm').onsubmit=async ev=>{
+  ev.preventDefault();const st=$('evStatus');st.style.color='';
+  if(!$('eTitle').value.trim()||!$('eDate').value){st.textContent='Add a title and date.';st.style.color='var(--bad)';return}
+  st.textContent='Saving…';
+  const locs=[];
+  for(const d of $('eLocs').children){
+    const l={name:d.querySelector('.ln').value.trim(),place:d.querySelector('.lp').value.trim(),address:d.querySelector('.la').value.trim(),lat:d.dataset.lat===''?null:+d.dataset.lat,lon:d.dataset.lon===''?null:+d.dataset.lon};
+    if(!l.name&&!l.place&&!l.address)continue;
+    if(l.address&&(l.lat==null||l.address!==d.dataset.addr)){
+      try{const j=await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(l.address+', New Orleans, LA')}.json?proximity=-90.08,29.95&limit=1&access_token=${TOKEN}`).then(r=>r.json());const c=j.features&&j.features[0]&&j.features[0].center;if(c){l.lon=c[0];l.lat=c[1]}else{l.lat=l.lon=null}}catch{l.lat=l.lon=null}
+    }
+    locs.push(l);
+  }
+  const body={title:$('eTitle').value,date:$('eDate').value,start:$('eStart').value,end:$('eEnd').value,note:$('eNote').value,locations:locs};
+  const r=await call(editing?`/admin/events/${editing}`:'/admin/events',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).catch(()=>null);
+  if(r&&r.ok){st.textContent='Saved';st.style.color='var(--ok)';$('evForm').hidden=true;loadEvents()}else{st.textContent='That didn’t save. Try again.';st.style.color='var(--bad)'}
+};
 start();
 </script>
 </body>

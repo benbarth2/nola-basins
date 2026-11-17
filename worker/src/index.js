@@ -9,6 +9,8 @@
 //   POST /admin/:id/approve  JSON {address?, label?, cleaned?}
 //   POST /admin/:id/reject
 //   GET  /admin/check
+// Events:   GET /events (upcoming), admin GET/POST /admin/events, POST /admin/events/:id, POST /admin/events/:id/delete
+// Requests: POST /request, admin GET /admin/requests?status=new|handled, POST /admin/requests/:id/handled|new
 
 const ALLOWED_ORIGINS = ['https://grate.city', 'https://www.grate.city', 'https://benbarth2.github.io', 'http://localhost:8765'];
 const MAX_PHOTOS = 4;
@@ -33,6 +35,8 @@ export default {
       const p = url.pathname.replace(/\/+$/, '') || '/';
       if (req.method === 'POST' && p === '/submit') return await submit(req, env, cors);
       if (req.method === 'GET' && p === '/approved') return await approved(env, cors, url);
+      if (req.method === 'GET' && p === '/events') return await listEvents(env, cors, false);
+      if (req.method === 'POST' && p === '/request') return await request(req, env, cors);
       let m;
       if (req.method === 'GET' && (m = p.match(/^\/photo\/(\d+)$/))) return await photo(req, env, cors, +m[1]);
       if (p.startsWith('/admin')) {
@@ -40,6 +44,12 @@ export default {
         if (req.method === 'GET' && p === '/admin/check') return json({ ok: true }, 200, cors);
         if (req.method === 'GET' && p === '/admin/list') return await adminList(env, cors, url);
         if (req.method === 'POST' && (m = p.match(/^\/admin\/(\d+)\/(approve|reject|pending)$/))) return await adminSet(req, env, cors, +m[1], m[2]);
+        if (req.method === 'GET' && p === '/admin/events') return await listEvents(env, cors, true);
+        if (req.method === 'POST' && p === '/admin/events') return await saveEvent(req, env, cors, null);
+        if (req.method === 'POST' && (m = p.match(/^\/admin\/events\/(\d+)$/))) return await saveEvent(req, env, cors, +m[1]);
+        if (req.method === 'POST' && (m = p.match(/^\/admin\/events\/(\d+)\/delete$/))) return await deleteEvent(env, cors, +m[1]);
+        if (req.method === 'GET' && p === '/admin/requests') return await listRequests(env, cors, url);
+        if (req.method === 'POST' && (m = p.match(/^\/admin\/requests\/(\d+)\/(handled|new)$/))) return await setRequest(env, cors, +m[1], m[2]);
       }
       if (p === '/') return json({ service: 'Grate City submissions' }, 200, cors);
       return json({ error: 'Not found' }, 404, cors);
@@ -169,4 +179,83 @@ function fromB64(b64) {
   const s = atob(b64), out = new Uint8Array(s.length);
   for (let i = 0; i < s.length; i++) out[i] = s.charCodeAt(i);
   return out;
+}
+
+// ---------- Events ----------
+const today = () => new Date(Date.now() - 6 * 3600e3).toISOString().slice(0, 10); // New Orleans date, roughly
+
+async function listEvents(env, cors, all) {
+  const { results } = await env.DB.prepare(
+    all ? 'SELECT * FROM events ORDER BY date DESC, start_time' : 'SELECT * FROM events WHERE date >= ? ORDER BY date, start_time'
+  ).bind(...(all ? [] : [today()])).all();
+  const out = results.map(e => ({ id: e.id, title: e.title, date: e.date, start: e.start_time, end: e.end_time, note: e.note, locations: safeJSON(e.locations) }));
+  return json(out, 200, cors, { 'Cache-Control': all ? 'no-store' : 'public, max-age=60' });
+}
+const safeJSON = t => { try { const v = JSON.parse(t); return Array.isArray(v) ? v : []; } catch { return []; } };
+
+async function saveEvent(req, env, cors, id) {
+  let b; try { b = await req.json(); } catch { return json({ error: 'Bad request' }, 400, cors); }
+  const title = clean(b.title, 120), date = clean(b.date, 10);
+  if (!title || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return json({ error: 'Needs a title and a date.' }, 400, cors);
+  const time = v => /^\d{2}:\d{2}$/.test(v || '') ? v : null;
+  const locs = (Array.isArray(b.locations) ? b.locations : []).slice(0, 12).map(l => ({
+    name: clean(l.name, 80), place: clean(l.place, 120), address: clean(l.address, 160),
+    lat: Number.isFinite(+l.lat) && l.lat !== '' && l.lat !== null ? +l.lat : null,
+    lon: Number.isFinite(+l.lon) && l.lon !== '' && l.lon !== null ? +l.lon : null,
+  })).filter(l => l.name || l.place || l.address);
+  const args = [title, date, time(b.start), time(b.end), clean(b.note, 600), JSON.stringify(locs)];
+  if (id) {
+    const r = await env.DB.prepare('UPDATE events SET title=?, date=?, start_time=?, end_time=?, note=?, locations=? WHERE id=?').bind(...args, id).run();
+    if (!r.meta.changes) return json({ error: 'Not found' }, 404, cors);
+  } else {
+    const r = await env.DB.prepare("INSERT INTO events (title, date, start_time, end_time, note, locations, created) VALUES (?,?,?,?,?,?,datetime('now'))").bind(...args).run();
+    id = r.meta.last_row_id;
+  }
+  return json({ ok: true, id }, 200, cors);
+}
+
+async function deleteEvent(env, cors, id) {
+  await env.DB.prepare('DELETE FROM events WHERE id = ?').bind(id).run();
+  return json({ ok: true }, 200, cors);
+}
+
+// ---------- Cleanup requests ----------
+async function request(req, env, cors) {
+  let f;
+  const ct = req.headers.get('Content-Type') || '';
+  if (ct.includes('application/json')) { try { f = new Map(Object.entries(await req.json())); } catch { return json({ error: 'Bad request' }, 400, cors); } }
+  else { const fd = await req.formData(); f = new Map([...fd.entries()]); }
+  if (clean(f.get('website'), 100)) return json({ ok: true }, 200, cors); // honeypot
+  const address = clean(f.get('address'), 200);
+  const email = clean(f.get('email'), 120), phone = clean(f.get('phone'), 40), name = clean(f.get('name'), 80);
+  if (address.length < 4) return json({ error: 'Please add an address or corner to meet at.' }, 400, cors);
+  if (!email && !phone) return json({ error: 'Please add an email or phone number so we can reach you.' }, 400, cors);
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return json({ error: 'That email doesn’t look right.' }, 400, cors);
+  const helpers = ['yes', 'no', 'not-sure'].includes(f.get('helpers')) ? f.get('helpers') : 'not-sure';
+  const count = Math.max(0, Math.min(500, parseInt(f.get('helpers_count'), 10) || 0)) || null;
+  let lat = Number(f.get('lat')), lon = Number(f.get('lon'));
+  if (!(Number.isFinite(lat) && Number.isFinite(lon) && lat > BOUNDS.minLat && lat < BOUNDS.maxLat && lon > BOUNDS.minLon && lon < BOUNDS.maxLon)) { lat = null; lon = null; }
+
+  const ip = req.headers.get('CF-Connecting-IP') || 'unknown';
+  const recent = await env.DB.prepare("SELECT COUNT(*) AS n FROM requests WHERE ip = ? AND created > datetime('now','-1 hour')").bind(ip).first();
+  if (recent && recent.n >= 6) return json({ error: 'Lots of requests from here in the last hour — please try again later.' }, 429, cors);
+
+  const r = await env.DB.prepare(
+    `INSERT INTO requests (created, status, address, lat, lon, name, email, phone, helpers, helpers_count, note, ip)
+     VALUES (datetime('now'), 'new', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).bind(address, lat, lon, name, email, phone, helpers, count, clean(f.get('note'), 800), ip).run();
+  return json({ ok: true, id: r.meta.last_row_id }, 200, cors);
+}
+
+async function listRequests(env, cors, url) {
+  const status = url.searchParams.get('status') === 'handled' ? 'handled' : 'new';
+  const { results } = await env.DB.prepare('SELECT * FROM requests WHERE status = ? ORDER BY id DESC LIMIT 300').bind(status).all();
+  const counts = {};
+  for (const r of (await env.DB.prepare('SELECT status, COUNT(*) AS n FROM requests GROUP BY status').all()).results) counts[r.status] = r.n;
+  return json({ counts, items: results.map(r => ({ ...r, ip: undefined })) }, 200, cors, { 'Cache-Control': 'no-store' });
+}
+
+async function setRequest(env, cors, id, status) {
+  await env.DB.prepare('UPDATE requests SET status = ? WHERE id = ?').bind(status, id).run();
+  return json({ ok: true }, 200, cors);
 }
