@@ -298,7 +298,7 @@ popup=new mapboxgl.Popup({offset:10,closeButton:false});
 
 const approvedSubs=fetch(API+'/approved').then(r=>{if(!r.ok)return [];document.getElementById('submitBtn').hidden=false;document.getElementById('requestBtn').hidden=false;return r.json()}).catch(()=>[]);
 const timeout=ms=>new Promise(r=>setTimeout(()=>r([]),ms));
-Promise.all([fetch('basins.json?v=2026-11-23a').then(r=>r.json()),Promise.race([approvedSubs,timeout(4000)])]).then(([data,subs])=>{
+Promise.all([fetch('basins.json?v=2026-11-23b').then(r=>r.json()),Promise.race([approvedSubs,timeout(4000)])]).then(([data,subs])=>{
   data=data.concat(Array.isArray(subs)?subs:[]);
   basins=data.map((b,i)=>({...b,i,key:b.d+'|'+b.n,bk:b.cid||(b.sid?'s'+b.sid:b.a+'|'+b.lat)}));
   // one dot per physical basin; a basin cleaned at several cleanups keeps every visit
